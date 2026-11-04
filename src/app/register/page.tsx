@@ -38,6 +38,14 @@ export default async function RegisterPage() {
         </Link>
         .
       </p>
+
+      <p className="mt-2 text-center text-xs text-slate-500">
+        Your organisation is not on CampusGuard yet?{' '}
+        <Link href="/join" className="font-medium text-brand-700 hover:underline">
+          Ask them to join
+        </Link>
+        .
+      </p>
     </main>
   );
 }

@@ -37,9 +37,9 @@ export function LoginForm() {
       {state.error ? <Alert tone="danger">{state.error}</Alert> : null}
       <div>
         <label className="label" htmlFor="email">
-          University email
+          Work or study email
         </label>
-        <input id="email" name="email" type="email" required autoComplete="email" className="input" placeholder="you@aastu.edu.et" />
+        <input id="email" name="email" type="email" required autoComplete="email" className="input" placeholder="you@your-organisation.edu.et" />
       </div>
       <div>
         <label className="label" htmlFor="password">
@@ -53,7 +53,7 @@ export function LoginForm() {
       <p className="text-center text-sm text-slate-500">
         No account?{' '}
         <Link href="/register" className="font-medium text-brand-700 hover:underline">
-          Register with your university email
+          Register with your organisation email
         </Link>
       </p>
     </form>
@@ -146,14 +146,16 @@ export function RegisterForm() {
         </div>
         <div>
           <label className="label" htmlFor="email">
-            University email
+            Work or study email
           </label>
-          <input id="email" name="email" type="email" required className="input" placeholder="you@aastu.edu.et" autoComplete="email" />
-          <p className="mt-1 text-xs text-slate-500">Only email domains registered with your university are accepted.</p>
+          <input id="email" name="email" type="email" required className="input" placeholder="you@your-organisation.edu.et" autoComplete="email" />
+          <p className="mt-1 text-xs text-slate-500">
+            Only email domains your organisation has registered with CampusGuard are accepted.
+          </p>
         </div>
         <div>
           <label className="label" htmlFor="studentId">
-            University ID number
+            ID number issued by your organisation
           </label>
           <input id="studentId" name="studentId" required className="input" placeholder="e.g. UGR/1234/15" />
         </div>
@@ -203,5 +205,23 @@ export function RegisterForm() {
         </Link>
       </p>
     </form>
+  );
+}
+
+/** Sign out. Extracted so the platform console can reuse it without the tenant nav. */
+export function SignOutButton() {
+  const router = useRouter();
+
+  return (
+    <button
+      className="btn-secondary btn-sm"
+      onClick={async () => {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        router.push('/login');
+        router.refresh();
+      }}
+    >
+      Sign out
+    </button>
   );
 }

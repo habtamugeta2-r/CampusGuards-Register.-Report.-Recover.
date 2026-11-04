@@ -4,7 +4,9 @@ import { getPageSession } from '@/lib/auth';
 import { SettingsForm } from '@/components/admin-forms';
 import { lastRetentionRun } from '@/lib/retention';
 import { queryOne } from '@/lib/db';
-import { Alert, Card, CardHeader, PageHeader } from '@/components/ui';
+import { Alert, Badge, Card, CardHeader, PageHeader } from '@/components/ui';
+import { OrganisationProfileForm } from '@/components/platform-forms';
+import { INSTITUTION_KIND_LABEL, INSTITUTION_STATUS_LABEL } from '@/lib/constants';
 import { formatDate, formatDateTime, percent } from '@/lib/format';
 import type { BaselineMetric } from '@/lib/types';
 
@@ -120,21 +122,59 @@ export default async function AdminSettingsPage() {
           </Card>
 
           <Card className="card-pad">
-            <h2 className="text-base font-semibold text-slate-900">Institution</h2>
+            <h2 className="text-base font-semibold text-slate-900">Organisation</h2>
             <dl className="mt-2 space-y-1 text-sm text-slate-700">
-              <div className="flex justify-between">
-                <dt>Name</dt>
-                <dd className="text-right">{institution.name}</dd>
+              <div className="flex justify-between gap-3">
+                <dt>Type</dt>
+                <dd>{INSTITUTION_KIND_LABEL[institution.kind] ?? institution.kind}</dd>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-3">
+                <dt>Status</dt>
+                <dd>
+                  <Badge tone={institution.status === 'ACTIVE' ? 'ok' : institution.status === 'TRIAL' ? 'info' : 'warn'}>
+                    {INSTITUTION_STATUS_LABEL[institution.status] ?? institution.status}
+                  </Badge>
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
                 <dt>Email domain</dt>
                 <dd>{institution.email_domain}</dd>
               </div>
-              <div className="flex justify-between">
-                <dt>Timezone</dt>
-                <dd>{institution.timezone}</dd>
+              <div className="flex justify-between gap-3">
+                <dt>Data region</dt>
+                <dd>{institution.data_region}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt>Licence</dt>
+                <dd>
+                  {institution.licence_expires_at
+                    ? `until ${formatDate(institution.licence_expires_at)}`
+                    : 'no end date agreed'}
+                </dd>
               </div>
             </dl>
+            <p className="mt-3 text-xs text-slate-500">
+              Domains, type, status, licence and seat limits are managed by the platform operator, not here — an
+              administrator who could change them could widen their own access.
+            </p>
+          </Card>
+
+          <Card className="card-pad">
+            <h2 className="text-base font-semibold text-slate-900">Organisation profile</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              How your organisation is named across the platform: on printed labels, in emails and on the public
+              status page.
+            </p>
+            <div className="mt-3">
+              <OrganisationProfileForm
+                initial={{
+                  name: institution.name,
+                  city: institution.city,
+                  country: institution.country,
+                  timezone: institution.timezone,
+                }}
+              />
+            </div>
           </Card>
         </div>
       </div>

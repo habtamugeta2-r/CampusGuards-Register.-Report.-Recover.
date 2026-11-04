@@ -1,4 +1,4 @@
-import type { ProductType, Role } from './types';
+import type { InstitutionKind, ProductType, Role } from './types';
 
 export const SESSION_COOKIE = 'cg_session';
 export const SESSION_TTL_HOURS = 12;
@@ -85,3 +85,62 @@ export const CONSENT_VERSIONS = {
   PILOT_PARTICIPATION: '2026-01-01',
   DATA_PROCESSING: '2026-01-01',
 } as const;
+
+/**
+ * Kinds of organisation that can use the platform. Universities are where this
+ * started; colleges, TVET institutes, companies and government offices have the
+ * same four needs (register equipment, report it missing, verify it at a gate,
+ * authorise someone else to carry it), so the tenant is typed rather than
+ * hard-coded to higher education.
+ */
+export const INSTITUTION_KINDS = [
+  'UNIVERSITY',
+  'COLLEGE',
+  'TVET',
+  'SCHOOL',
+  'COMPANY',
+  'GOVERNMENT',
+  'NGO',
+  'OTHER',
+] as const;
+
+export const INSTITUTION_KIND_LABEL: Record<(typeof INSTITUTION_KINDS)[number], string> = {
+  UNIVERSITY: 'University',
+  COLLEGE: 'College',
+  TVET: 'TVET institute',
+  SCHOOL: 'School',
+  COMPANY: 'Company',
+  GOVERNMENT: 'Government office',
+  NGO: 'NGO / non-profit',
+  OTHER: 'Other organisation',
+};
+
+export const INSTITUTION_STATUSES = ['TRIAL', 'ACTIVE', 'SUSPENDED', 'CLOSED'] as const;
+
+export const INSTITUTION_STATUS_LABEL: Record<(typeof INSTITUTION_STATUSES)[number], string> = {
+  TRIAL: 'Trial',
+  ACTIVE: 'Active',
+  SUSPENDED: 'Suspended',
+  CLOSED: 'Closed',
+};
+
+/**
+ * The same registry serves universities and companies, and the same role
+ * (`STUDENT`) covers a student, an employee and a member of staff. Calling them
+ * "students" inside a company tenant is the kind of small lie that makes people
+ * distrust the rest of the interface, so the words come from the tenant's kind.
+ */
+export const MEMBER_LABELS: Record<InstitutionKind, { noun: string; plural: string; idLabel: string }> = {
+  UNIVERSITY: { noun: 'Student', plural: 'Students', idLabel: 'Student ID' },
+  COLLEGE: { noun: 'Student', plural: 'Students', idLabel: 'Student ID' },
+  TVET: { noun: 'Trainee', plural: 'Trainees', idLabel: 'Trainee ID' },
+  SCHOOL: { noun: 'Student', plural: 'Students', idLabel: 'Student ID' },
+  COMPANY: { noun: 'Employee', plural: 'Employees', idLabel: 'Employee ID' },
+  GOVERNMENT: { noun: 'Staff member', plural: 'Staff', idLabel: 'Staff ID' },
+  NGO: { noun: 'Staff member', plural: 'Staff', idLabel: 'Staff ID' },
+  OTHER: { noun: 'Member', plural: 'Members', idLabel: 'Member ID' },
+};
+
+export function memberLabels(kind: InstitutionKind | string | null | undefined) {
+  return MEMBER_LABELS[(kind ?? 'OTHER') as InstitutionKind] ?? MEMBER_LABELS.OTHER;
+}

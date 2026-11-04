@@ -111,7 +111,7 @@ export function resolveVerification(subject: VerificationSubject): VerificationO
     tone: 'ok',
     headline: 'Registered — no active reports',
     detail: `${subject.productLabel ?? 'Device'} is registered to ${subject.ownerName ?? 'a verified student'}. No active reports. The carrier’s identity was not checked.`,
-    action: 'Spot-check: confirm the carrier’s university ID if the situation warrants it, then allow through.',
+    action: 'Spot-check: confirm the carrier’s ID if the situation warrants it, then allow through.',
     carrierUnverified: true,
   };
 }

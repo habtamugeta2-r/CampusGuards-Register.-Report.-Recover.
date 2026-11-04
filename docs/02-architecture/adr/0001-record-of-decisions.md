@@ -8,6 +8,7 @@
 | [0004](0004-pure-verification-engine.md) | The verification rule engine is a pure function |
 | [0005](0005-opaque-qr-tokens.md) | QR codes carry an opaque token, never identity |
 | [0006](0006-encrypted-offline-cache.md) | The officer's offline cache is encrypted with a non-extractable key |
+| [0007](0007-multi-tenant-platform.md) | One multi-tenant platform; tenants are a column, not a database |
 
 ## ADR-0001: Record architecture decisions
 

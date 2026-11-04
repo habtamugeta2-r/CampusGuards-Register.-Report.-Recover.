@@ -40,11 +40,14 @@ export function TopNav({
   name,
   institution,
   unread,
+  isPlatformAdmin = false,
 }: {
   role: Role;
   name: string;
   institution: string;
   unread: number;
+  /** Platform operators get a link across tenants; nobody else does. */
+  isPlatformAdmin?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -66,6 +69,14 @@ export function TopNav({
         </Link>
 
         <nav aria-label="Main" className="order-3 -mx-1 flex w-full gap-1 overflow-x-auto md:order-2 md:w-auto">
+          {isPlatformAdmin ? (
+            <Link
+              href="/platform"
+              className="whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              Platform
+            </Link>
+          ) : null}
           {items.map((item) => {
             const active = pathname === item.href || (item.href !== '/student' && pathname.startsWith(item.href + '/'));
             return (

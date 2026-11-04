@@ -28,6 +28,7 @@ export async function AppShell({
         name={session.user.full_name}
         institution={session.institution.code}
         unread={unread}
+        isPlatformAdmin={session.platformRole === 'PLATFORM_ADMIN'}
       />
       <main id="main-content" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 sm:py-8 focus:outline-none">
         {children}

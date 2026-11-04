@@ -1,4 +1,5 @@
 import './env';
+import { query, queryOne } from '../src/lib/db';
 
 /**
  * End-to-end workflow test against a running server.
@@ -52,7 +53,10 @@ function expect(label: string, condition: boolean, detail?: unknown) {
     console.log(`ok   ${label}`);
   } else {
     failures += 1;
-    console.log(`FAIL ${label}`, detail ?? '');
+    // Truncated so a failure that returns an HTML error page does not bury the
+    // rest of the output.
+    const shown = typeof detail === 'string' ? detail : JSON.stringify(detail);
+    console.log(`FAIL ${label}`, shown ? shown.slice(0, 300) : '');
   }
 }
 
@@ -285,6 +289,265 @@ async function main() {
       (manifestAfter.body.rows ?? []).every((row: { token: string }) => row.token !== token),
     manifestAfter.body,
   );
+
+  // === 11. Multi-tenancy ====================================================
+  // The platform holds many organisations. The checks that matter: a
+  // non-operator cannot reach the platform API at all; a tenant created here
+  // picks up registrations on its own domain and nothing else; and one
+  // tenant's administrator cannot see another tenant's people.
+  const opsCookie = await login('ops@campusguard.et', 'Demo#2026');
+
+  const platformAsTenantAdmin = await call('GET', '/api/platform/overview', { cookie: adminCookie });
+  expect(
+    'an organisation administrator cannot reach the platform API',
+    platformAsTenantAdmin.status === 403,
+    platformAsTenantAdmin.body,
+  );
+
+  const overview = await call('GET', '/api/platform/overview', { cookie: opsCookie });
+  expect('a platform operator sees the deployment overview', overview.status === 200, overview.body);
+  expect(
+    'the overview counts organisations but names no people',
+    overview.status === 200 &&
+      typeof overview.body.overview?.organisations === 'number' &&
+      JSON.stringify(overview.body).includes('@aastu.edu.et') === false,
+    overview.body.overview,
+  );
+
+  const tenantDomain = `flowtest-${suffix}.edu.et`;
+  const created = await call('POST', '/api/platform/institutions', {
+    cookie: opsCookie,
+    body: {
+      name: `Flow Test College ${suffix}`,
+      code: `FTC${suffix}`.toUpperCase(),
+      kind: 'COLLEGE',
+      status: 'TRIAL',
+      country: 'Ethiopia',
+      city: 'Adama',
+      primaryDomain: tenantDomain,
+      seatLimit: 3,
+    },
+  });
+  expect('a platform operator can provision a new organisation', created.status === 200, created.body);
+  const tenantId = created.body.institution?.id as string | undefined;
+
+  const duplicateDomain = await call('POST', '/api/platform/institutions', {
+    cookie: opsCookie,
+    body: {
+      name: `Duplicate ${suffix}`,
+      code: `DUP${suffix}`.toUpperCase(),
+      kind: 'OTHER',
+      primaryDomain: tenantDomain,
+    },
+  });
+  expect(
+    'a domain can only be claimed by one organisation',
+    duplicateDomain.status === 409,
+    duplicateDomain.body,
+  );
+
+  // A person on the new tenant's domain lands in the new tenant.
+  const tenantEmail = `student@${tenantDomain}`;
+  const tenantRegistered = await call('POST', '/api/auth/register', {
+    body: {
+      email: tenantEmail,
+      password: PASSWORD,
+      fullName: 'Flow Tenant Student',
+      studentId: `FTC/${suffix}`,
+      consents: ['TERMS_OF_USE', 'PRIVACY_NOTICE'],
+    },
+  });
+  expect('someone on a new organisation’s domain can register', tenantRegistered.status === 200, tenantRegistered.body);
+
+  const tenantStudentCookie = await login(tenantEmail, PASSWORD);
+  const tenantMe = await call('GET', '/api/auth/me', { cookie: tenantStudentCookie });
+  expect(
+    'the new account belongs to the new organisation, not to AASTU',
+    tenantMe.body.user?.institutionId === tenantId || tenantMe.body.user?.institution_id === tenantId,
+    tenantMe.body.user,
+  );
+
+  // Isolation in the direction that matters: an AASTU administrator looking up
+  // a person who belongs to another tenant must find nothing, not find them.
+  const crossTenantLookup = await call(
+ 'GET',
+    `/api/admin/scan-history?identifier=${encodeURIComponent(`FTC/${suffix}`)}&justification=Cross%20tenant%20isolation%20check`,
+    { cookie: adminCookie },
+  );
+  expect(
+    'an administrator cannot find a person who belongs to another organisation',
+    crossTenantLookup.status === 404,
+    crossTenantLookup.body,
+  );
+
+  const tenantProducts = await call('GET', '/api/products', { cookie: tenantStudentCookie });
+  const tenantProductList: Array<{ id: string }> = tenantProducts.body.products ?? [];
+  expect(
+    'a student sees only their own organisation’s registry',
+    tenantProducts.status === 200 && tenantProductList.length === 0,
+    tenantProducts.body,
+  );
+
+  // Seat limits: the tenant was created with 3 seats. Fill them, then expect
+  // the next registration to be refused while existing accounts keep working.
+  for (let i = 0; i < 2; i += 1) {
+    await call('POST', '/api/auth/register', {
+      body: {
+        email: `filler${i}@${tenantDomain}`,
+        password: PASSWORD,
+        fullName: `Filler ${i}`,
+        studentId: `FTC/${suffix}-${i}`,
+        consents: ['TERMS_OF_USE'],
+      },
+    });
+  }
+  const overSeatLimit = await call('POST', '/api/auth/register', {
+    body: {
+      email: `overlimit@${tenantDomain}`,
+      password: PASSWORD,
+      fullName: 'Over Limit',
+      studentId: `FTC/${suffix}-over`,
+      consents: ['TERMS_OF_USE'],
+    },
+  });
+  expect(
+    'registration stops at the organisation’s seat limit',
+    overSeatLimit.status === 403,
+    overSeatLimit.body,
+  );
+  const stillSignedIn = await call('GET', '/api/auth/me', { cookie: tenantStudentCookie });
+  expect('existing accounts are not locked out by a seat limit', stillSignedIn.status === 200, stillSignedIn.body);
+
+  // Suspending a tenant closes the door without deleting a single row.
+  const suspended = await call('PATCH', `/api/platform/institutions/${tenantId}`, {
+    cookie: opsCookie,
+    body: { status: 'SUSPENDED', reason: 'Flow test suspension' },
+  });
+  expect('a platform operator can suspend an organisation', suspended.status === 200, suspended.body);
+
+  const registerWhileSuspended = await call('POST', '/api/auth/register', {
+    body: {
+      email: `blocked@${tenantDomain}`,
+      password: PASSWORD,
+      fullName: 'Blocked Person',
+      studentId: `FTC/${suffix}-blocked`,
+      consents: ['TERMS_OF_USE'],
+    },
+  });
+  expect(
+    'a suspended organisation cannot enrol new people',
+    registerWhileSuspended.status === 403,
+    registerWhileSuspended.body,
+  );
+
+  const loginWhileSuspended = await call('POST', '/api/auth/login', {
+    body: { email: tenantEmail, password: PASSWORD },
+  });
+  expect(
+    'a suspended organisation cannot sign people in either',
+    loginWhileSuspended.status === 403,
+    loginWhileSuspended.body,
+  );
+
+  // --- An organisation applies, and a human approves it ---------------------
+  const applyDomain = `applicant-${suffix}.edu.et`;
+  const applied = await call('POST', '/api/platform/requests', {
+    body: {
+      organisationName: `Applicant University ${suffix}`,
+      kind: 'UNIVERSITY',
+      country: 'Ethiopia',
+      city: 'Hawassa',
+      contactName: 'Registrar',
+      contactEmail: 'registrar@example.org',
+      primaryDomain: applyDomain,
+      estimatedPeople: 9000,
+    },
+  });
+  expect('an organisation can apply to join without an account', applied.status === 200, applied.body);
+
+  const queue = await call('GET', '/api/platform/requests', { cookie: opsCookie });
+  const application = (queue.body.requests ?? []).find(
+    (row: { organisation_name: string }) => row.organisation_name === `Applicant University ${suffix}`,
+  );
+  expect('the application appears in the operator’s review queue', Boolean(application), queue.body);
+
+  const approved = await call('POST', `/api/platform/requests/${application?.id}`, {
+    cookie: opsCookie,
+    body: { decision: 'APPROVED', code: `APU${suffix}`.toUpperCase(), status: 'TRIAL' },
+  });
+  expect('approving an application provisions the organisation', approved.status === 200, approved.body);
+  expect(
+    'approval creates a first administrator and a one-time password',
+    approved.body.admin?.email === `admin@${applyDomain}` && Boolean(approved.body.temporaryPassword),
+    approved.body,
+  );
+
+  const doubleDecision = await call('POST', `/api/platform/requests/${application?.id}`, {
+    cookie: opsCookie,
+    body: { decision: 'APPROVED' },
+  });
+  expect('an application cannot be approved twice', doubleDecision.status === 409, doubleDecision.body);
+
+  const platformAudit = await call('GET', '/api/platform/audit', { cookie: opsCookie });
+  expect(
+    'platform actions are recorded in a log no tenant can edit',
+    platformAudit.status === 200 &&
+      (platformAudit.body.rows ?? []).some((row: { action: string }) => row.action === 'institution.create'),
+    platformAudit.body,
+  );
+
+  const auditAsTenantAdmin = await call('GET', '/api/platform/audit', { cookie: adminCookie });
+  expect('a tenant administrator cannot read the platform audit log', auditAsTenantAdmin.status === 403);
+
+  // The database, not the application, keeps a tenant's domains in step with
+  // the tenant itself. Without that, a tenant created directly in SQL — by a
+  // script, a migration or an operator with psql — would exist and still be
+  // impossible to sign in to.
+  const sqlDomain = `sqltenant-${suffix}.edu.et`;
+  const sqlTenantId = `ins_${suffix}`;
+  await query(
+    `INSERT INTO institutions (id, name, code, email_domain, kind, status, country)
+     VALUES ($1, $2, $3, $4, 'OTHER', 'TRIAL', 'Ethiopia')`,
+    [sqlTenantId, `SQL Tenant ${suffix}`, `SQL${suffix}`.toUpperCase(), sqlDomain],
+  );
+  const sqlDomainRow = await queryOne<{ institution_id: string; is_primary: boolean }>(
+    'SELECT institution_id, is_primary FROM institution_domains WHERE domain = $1',
+    [sqlDomain],
+  );
+  expect(
+    'a tenant created directly in SQL still gets its domain registered',
+    sqlDomainRow?.institution_id === sqlTenantId && sqlDomainRow?.is_primary === true,
+    sqlDomainRow,
+  );
+
+  const sqlRegistered = await call('POST', '/api/auth/register', {
+    body: {
+      email: `student@${sqlDomain}`,
+      password: PASSWORD,
+      fullName: 'SQL Tenant Student',
+      studentId: `SQL/${suffix}`,
+      consents: ['TERMS_OF_USE', 'PRIVACY_NOTICE'],
+    },
+  });
+  expect('someone on that tenant’s domain can register', sqlRegistered.status === 200, sqlRegistered.body);
+
+  await query('DELETE FROM institutions WHERE id = $1', [sqlTenantId]);
+  const domainsAfterDelete = await queryOne<{ n: number }>(
+    'SELECT count(*)::int AS n FROM institution_domains WHERE domain = $1',
+    [sqlDomain],
+  );
+  expect('removing the tenant removes its domains', domainsAfterDelete?.n === 0, domainsAfterDelete);
+
+  // --- Tidy up: close the tenants this run created --------------------------
+  for (const id of [tenantId, approved.body.institution?.id]) {
+    if (id) {
+      await call('PATCH', `/api/platform/institutions/${id}`, {
+        cookie: opsCookie,
+        body: { status: 'CLOSED', reason: 'Flow test cleanup' },
+      });
+    }
+  }
+  expect('flow-test organisations closed', true);
 
   console.log(failures ? `\n${failures} failure(s).` : '\nAll workflow checks passed.');
   process.exit(failures ? 1 : 0);

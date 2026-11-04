@@ -40,6 +40,32 @@ export async function requireRole(...roles: Role[]): Promise<SessionUser> {
   return session;
 }
 
+/**
+ * Platform-operator guard.
+ *
+ * This is a separate axis from the institution role on purpose. An
+ * administrator of one university must not be able to reach another
+ * university's data by any route, so "can administer my organisation" and "can
+ * administer the platform" are different grants, checked by different code,
+ * and only the second one unlocks /platform and its API.
+ */
+export async function requirePlatformAdmin(): Promise<SessionUser> {
+  const session = await requireUser();
+  if (session.platformRole !== 'PLATFORM_ADMIN') {
+    throw new ForbiddenError('This action is restricted to platform operators.');
+  }
+  return session;
+}
+
+/** Page-level guard for /platform: redirect instead of throwing. */
+export async function requirePlatformPage(): Promise<SessionUser> {
+  const session = await requirePage();
+  if (session.platformRole !== 'PLATFORM_ADMIN') redirect(roleHome(session.role, session.platformRole));
+  return session;
+}
+
+export const getPlatformPageSession = cache(async () => requirePlatformPage());
+
 /** Page-level guard: redirect instead of throwing. */
 export async function requirePage(roles?: Role[]): Promise<SessionUser> {
   const session = await getSessionUser();

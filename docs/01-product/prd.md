@@ -7,17 +7,35 @@ it refuses to do, and which requirements the current build meets.
 
 ## 1. Problem
 
-University students carry devices worth tens of thousands of birr through shared spaces. When
-something goes missing, the failure is rarely technical: nobody holds a record connecting the
-student, the device, the incident report, and the person who eventually finds it.
+People carry devices worth tens of thousands of birr through shared spaces — university libraries,
+college labs, company offices, government buildings. When something goes missing, the failure is
+rarely technical: nobody holds a record connecting the owner, the device, the incident report, and
+the person who eventually finds it.
 
 CampusGuard addresses one specific gap:
 
-> The absence of a structured, accessible system for registering personal belongings, reporting
-> property incidents, matching found items with their owners, and giving security officers better
+> The absence of a structured, accessible system for registering belongings, reporting property
+> incidents, matching found items with their owners, and giving whoever staffs a checkpoint better
 > information when they need to verify a device.
 
 It is most useful *after* something goes wrong.
+
+### 1.1 Scope: many organisations, not one university
+
+The registry was prototyped for one Ethiopian university because that is where the evidence and the
+relationships are. It is built as a **multi-tenant platform**, not a single-tenant app, because the
+gap is not specific to higher education or to one country:
+
+| Organisation | The same four capabilities, applied |
+| --- | --- |
+| University / college / TVET | Students register laptops and instruments; gates verify them |
+| Company | Employees register issued laptops; reception verifies equipment leaving the building |
+| Government office | Departments register shared equipment; registry staff verify what moves between sites |
+| NGO / institute | Field staff register kit; country offices verify what returns from the field |
+
+Each organisation is a tenant with its own email domains, retention windows, administrators, seat
+limit, licence and data region. A platform operator provisions them and cannot read their data —
+see [`docs/02-architecture/multi-tenancy.md`](../02-architecture/multi-tenancy.md).
 
 ## 2. Personas
 
@@ -27,6 +45,7 @@ It is most useful *after* something goes wrong.
 | **Hana**, 2nd-year student | Finds a laptop on a study desk | "I want to hand it in without hunting for the owner and without getting pulled into a dispute." |
 | **Tigist**, security officer | Stations a checkpoint for a 6-hour shift | "When I stop someone, I want to know what I am looking at — and I want to be protected from getting it wrong." |
 | **Getachew**, administrator | Accounts for property incidents across campus | "I want to know how often this happens, how often we recover things, and that we handled it properly." |
+| **Selam**, platform operator | Runs the platform for several organisations | "I need to provision a tenant, set its licence, and never be able to read who owns what inside it." |
 
 ## 3. Functional requirements
 

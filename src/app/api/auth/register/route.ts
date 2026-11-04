@@ -1,7 +1,8 @@
 import { route, ok, fail, readJson, clientIp, userAgent, conflict } from '@/lib/http';
 import { registerSchema } from '@/lib/validation';
 import { hashPassword, passwordProblems } from '@/lib/password';
-import { findInstitutionByDomain, recordConsent } from '@/lib/repos/misc';
+import { recordConsent } from '@/lib/repos/misc';
+import { countSeatsUsed, findInstitutionByDomain } from '@/lib/repos/platform';
 import { createUser, findUserByEmail } from '@/lib/repos/users';
 import { createSession } from '@/lib/session';
 import { logAudit } from '@/lib/audit';
@@ -22,8 +23,33 @@ export const POST = route(async (req: Request) => {
   if (!institution) {
     return fail(
       400,
-      'CampusGuard is not enabled for your university email domain yet. Ask your student affairs office to contact us.',
+      'CampusGuard is not enabled for your organisation’s email domain yet. Ask whoever runs your registry to contact us — a new organisation can apply at /join.',
     );
+  }
+
+  // A tenant can be closed or suspended without deleting a single row. Data is
+  // preserved; the door is shut.
+  if (institution.status === 'CLOSED') {
+    return fail(403, `${institution.name} is no longer using CampusGuard. Contact your administrator.`);
+  }
+  if (institution.status === 'SUSPENDED') {
+    return fail(403, `${institution.name}’s account is suspended. Contact your administrator.`);
+  }
+  if (institution.licence_expires_at && institution.licence_expires_at.getTime() < Date.now()) {
+    return fail(403, `${institution.name}’s licence expired on ${institution.licence_expires_at.toISOString().slice(0, 10)}. Contact your administrator to renew.`);
+  }
+
+  // Seat limits bite on registration only. Someone who already has an account
+  // must never be locked out of the devices they registered because of a
+  // billing conversation.
+  if (institution.seat_limit) {
+    const used = await countSeatsUsed(institution.id);
+    if (used >= institution.seat_limit) {
+      return fail(
+        403,
+        `${institution.name} has reached its ${institution.seat_limit} registered people. Ask your administrator to raise the limit.`,
+      );
+    }
   }
 
   const existing = await findUserByEmail(institution.id, body.email);

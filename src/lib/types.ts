@@ -19,6 +19,25 @@ export type ScanSource = 'LIVE' | 'OFFLINE_CACHE' | 'MANUAL_ENTRY';
 export type NotificationChannel = 'IN_APP' | 'EMAIL';
 export type ConsentType = 'TERMS_OF_USE' | 'PRIVACY_NOTICE' | 'PILOT_PARTICIPATION' | 'DATA_PROCESSING';
 
+export type InstitutionKind =
+  | 'UNIVERSITY'
+  | 'COLLEGE'
+  | 'TVET'
+  | 'SCHOOL'
+  | 'COMPANY'
+  | 'GOVERNMENT'
+  | 'NGO'
+  | 'OTHER';
+
+export type InstitutionStatus = 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'CLOSED';
+
+export type PlatformRole = 'NONE' | 'PLATFORM_ADMIN';
+
+/**
+ * One organisation using the platform: a university, a college, a company, a
+ * government office. Every row of tenant data carries an institution_id, so
+ * this is the tenant boundary — see docs/02-architecture/multi-tenancy.md.
+ */
 export type Institution = {
   id: string;
   name: string;
@@ -27,6 +46,12 @@ export type Institution = {
   city: string | null;
   country: string;
   timezone: string;
+  kind: InstitutionKind;
+  status: InstitutionStatus;
+  licence_expires_at: Date | null;
+  seat_limit: number | null;
+  logo_url: string | null;
+  data_region: string;
   scan_retention_days: number;
   report_retention_days: number;
   audit_retention_days: number;
@@ -35,6 +60,51 @@ export type Institution = {
   allow_aggregate_analytics: boolean;
   created_at: Date;
   updated_at: Date;
+};
+
+/** An email domain claimed by an organisation. Globally unique. */
+export type InstitutionDomain = {
+  id: string;
+  institution_id: string;
+  domain: string;
+  is_primary: boolean;
+  verified_at: Date | null;
+  created_at: Date;
+};
+
+/** An organisation's application to join the platform. */
+export type InstitutionRequest = {
+  id: string;
+  organisation_name: string;
+  kind: InstitutionKind;
+  country: string;
+  city: string | null;
+  contact_name: string;
+  contact_email: string;
+  primary_domain: string;
+  extra_domains: string[];
+  estimated_people: number | null;
+  message: string | null;
+  status: 'NEW' | 'APPROVED' | 'REJECTED';
+  reviewed_by_user_id: string | null;
+  reviewed_at: Date | null;
+  review_notes: string | null;
+  created_institution_id: string | null;
+  created_at: Date;
+  updated_at: Date;
+};
+
+export type PlatformAuditLog = {
+  id: string;
+  actor_user_id: string | null;
+  actor_email: string;
+  action: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  metadata: unknown;
+  ip: string | null;
+  user_agent: string | null;
+  created_at: Date;
 };
 
 export type User = {
@@ -259,5 +329,12 @@ export type SessionUser = {
   user: SafeUser;
   institution: Institution;
   role: Role;
+  /**
+   * Platform-level authority, independent of the institution role. Almost
+   * everyone is 'NONE'; a PLATFORM_ADMIN can administer every tenant from
+   * /platform. Deliberately a separate axis: granting someone control of one
+   * university must never quietly grant them control of all of them.
+   */
+  platformRole: PlatformRole;
   profile: StudentProfile | null;
 };

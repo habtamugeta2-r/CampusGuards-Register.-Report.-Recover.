@@ -21,7 +21,7 @@ export default async function LoginPage() {
 
       <Card className="card-pad">
         <h1 className="text-lg font-semibold text-slate-900">Sign in</h1>
-        <p className="mb-5 mt-1 text-sm text-slate-500">Use your university account.</p>
+        <p className="mb-5 mt-1 text-sm text-slate-500">Use the account your organisation gave you.</p>
         <LoginForm />
       </Card>
 
@@ -36,6 +36,9 @@ export default async function LoginPage() {
           </li>
           <li>
             Administrator — <span className="code-chip">admin@aastu.edu.et</span>
+          </li>
+          <li>
+            Platform operator — <span className="code-chip">ops@campusguard.et</span>
           </li>
           <li>
             Password for all: <span className="code-chip">Demo#2026</span>

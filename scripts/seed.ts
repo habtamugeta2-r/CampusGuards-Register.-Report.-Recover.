@@ -5,6 +5,13 @@ import { hashPassword } from '../src/lib/password';
 import { generateQrToken } from '../src/lib/tokens';
 import { logAudit } from '../src/lib/audit';
 import { createAuthorization } from '../src/lib/repos/borrow';
+import {
+  createInstitution,
+  createInstitutionRequest,
+  logPlatformAudit,
+  normaliseDomain,
+} from '../src/lib/repos/platform';
+import type { InstitutionKind, InstitutionStatus, Role } from '../src/lib/types';
 import { recordScan } from '../src/lib/repos/scans';
 import type { ProductType, ScanResult } from '../src/lib/types';
 
@@ -52,12 +59,20 @@ async function main() {
     process.exit(0);
   }
 
-  const institutionId = id.institution();
-  await query(
-    `INSERT INTO institutions (id, name, code, email_domain, city, country)
-     VALUES ($1,'Addis Ababa Science and Technology University','AASTU','aastu.edu.et','Addis Ababa','Ethiopia')`,
-    [institutionId],
-  );
+  // Tenants are created through the same code path a platform operator uses,
+  // so the demo database has the same invariants as a real one — including the
+  // email-domain rows that registration actually looks up.
+  const aastu = await createInstitution({
+    name: 'Addis Ababa Science and Technology University',
+    code: 'AASTU',
+    kind: 'UNIVERSITY',
+    status: 'ACTIVE',
+    country: 'Ethiopia',
+    city: 'Addis Ababa',
+    primaryDomain: 'aastu.edu.et',
+    seatLimit: 25000,
+  });
+  const institutionId = aastu.id;
 
   const passwordHash = await hashPassword(DEMO_PASSWORD);
 
@@ -350,9 +365,172 @@ async function main() {
     });
   }
 
+  // -------------------------------------------------------------------------
+  // Other tenants
+  //
+  // The point of the demo is that this is a platform, not one university's
+  // app: a second university in another city on a trial, a company whose
+  // "students" are employees, and the operating company's own tenant that
+  // holds the platform operators.
+  // -------------------------------------------------------------------------
+  const extraTenants: Array<{
+    name: string;
+    code: string;
+    kind: InstitutionKind;
+    status: InstitutionStatus;
+    city: string;
+    domain: string;
+    seatLimit: number | null;
+    people: Array<{ name: string; local: string; role: Role; studentId?: string }>;
+  }> = [
+    {
+      name: 'Bahir Dar University',
+      code: 'BDU',
+      kind: 'UNIVERSITY',
+      status: 'TRIAL',
+      city: 'Bahir Dar',
+      domain: 'bdu.edu.et',
+      seatLimit: 500,
+      people: [
+        { name: 'Mahder Alemu', local: 'mahder', role: 'STUDENT', studentId: 'BDU/2211/15' },
+        { name: 'Sisay Tadesse', local: 'sisay', role: 'STUDENT', studentId: 'BDU/3388/15' },
+        { name: 'Ato Endalkachew Nega', local: 'officer', role: 'SECURITY' },
+        { name: 'W/ro Aster Worku', local: 'admin', role: 'ADMIN' },
+      ],
+    },
+    {
+      name: 'Hi-Tech Solutions PLC',
+      code: 'HITECH',
+      kind: 'COMPANY',
+      status: 'ACTIVE',
+      city: 'Addis Ababa',
+      domain: 'hitechplc.et',
+      seatLimit: 250,
+      people: [
+        { name: 'Eyob Tesfaye', local: 'eyob', role: 'STUDENT', studentId: 'EMP-104' },
+        { name: 'Ruth Bekele', local: 'ruth', role: 'STUDENT', studentId: 'EMP-118' },
+        { name: 'Ato Solomon Girma', local: 'guard', role: 'SECURITY' },
+        { name: 'W/ro Frehiwot Abebe', local: 'admin', role: 'ADMIN' },
+      ],
+    },
+  ];
+
+  for (const tenant of extraTenants) {
+    const institution = await createInstitution({
+      name: tenant.name,
+      code: tenant.code,
+      kind: tenant.kind,
+      status: tenant.status,
+      country: 'Ethiopia',
+      city: tenant.city,
+      primaryDomain: tenant.domain,
+      seatLimit: tenant.seatLimit,
+    });
+
+    const ids = new Map<string, string>();
+    for (const person of tenant.people) {
+      const userId = id.user();
+      await query(
+        `INSERT INTO users (id, institution_id, email, password_hash, full_name, role, status)
+         VALUES ($1,$2,$3,$4,$5,$6,'ACTIVE')`,
+        [userId, institution.id, `${person.local}@${tenant.domain}`, passwordHash, person.name, person.role],
+      );
+      if (person.studentId) {
+        await query(
+          `INSERT INTO student_profiles (id, user_id, student_id, department) VALUES ($1,$2,$3,$4)`,
+          [id.profile(), userId, person.studentId, tenant.kind === 'COMPANY' ? 'Operations' : 'Engineering'],
+        );
+      }
+      ids.set(person.local, userId);
+    }
+
+    const checkpointId = id.checkpoint();
+    await query(`INSERT INTO checkpoints (id, institution_id, name, location) VALUES ($1,$2,$3,$4)`, [
+      checkpointId,
+      institution.id,
+      'Main gate',
+      `${tenant.city} — main entrance`,
+    ]);
+
+    // Two devices each, so cross-tenant isolation is visible in the console.
+    const devices = [
+      { local: tenant.people[0]!.local, type: 'LAPTOP' as const, brand: 'Dell', model: 'Latitude 5440', serial: `${tenant.code}-LT-001` },
+      { local: tenant.people[1]!.local, type: 'PHONE' as const, brand: 'Samsung', model: 'Galaxy A34', serial: `${tenant.code}-PH-001` },
+    ];
+    for (const device of devices) {
+      const productId = id.product();
+      const token = generateQrToken();
+      await query(
+        `INSERT INTO products (id, institution_id, owner_id, type, brand, model, serial_number, registered_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [productId, institution.id, ids.get(device.local)!, device.type, device.brand, device.model, device.serial, daysAgo(12)],
+      );
+      await query(
+        `INSERT INTO product_identifiers (id, product_id, kind, value, is_primary) VALUES ($1,$2,'QR_TOKEN',$3,true)`,
+        [id.identifier(), productId, token],
+      );
+      await query(`INSERT INTO ownerships (id, product_id, owner_id) VALUES ($1,$2,$3)`, [
+        id.ownership(),
+        productId,
+        ids.get(device.local)!,
+      ]);
+    }
+
+    await logAudit({
+      institutionId: institution.id,
+      actorId: ids.get('admin')!,
+      actorRole: 'ADMIN',
+      action: 'institution.created',
+      entityType: 'institution',
+      entityId: institution.id,
+      metadata: { seed: true, kind: tenant.kind },
+    });
+  }
+
+  // --- The operating company's tenant, which holds the platform operators ---
+  const ops = await createInstitution({
+    name: 'CampusGuard Operations',
+    code: 'CGOPS',
+    kind: 'OTHER',
+    status: 'ACTIVE',
+    country: 'Ethiopia',
+    city: 'Addis Ababa',
+    primaryDomain: 'campusguard.et',
+    seatLimit: 25,
+  });
+  const opsUserId = id.user();
+  await query(
+    `INSERT INTO users (id, institution_id, email, password_hash, full_name, role, status, platform_role)
+     VALUES ($1,$2,'ops@campusguard.et',$3,'Platform Operator','ADMIN','ACTIVE','PLATFORM_ADMIN')`,
+    [opsUserId, ops.id, passwordHash],
+  );
+  await logPlatformAudit({
+    actorUserId: null,
+    actorEmail: 'seed@campusguard.local',
+    action: 'seed.platform_operator',
+    entityType: 'user',
+    entityId: opsUserId,
+    metadata: { note: 'Demo platform operator created by the seed script' },
+  });
+
+  // --- One application waiting for review, so the queue is not empty -------
+  await createInstitutionRequest({
+    organisationName: 'Jimma University',
+    kind: 'UNIVERSITY',
+    country: 'Ethiopia',
+    city: 'Jimma',
+    contactName: 'Dr. Tesfaye Lemma',
+    contactEmail: 'registrar@ju.edu.et',
+    primaryDomain: 'ju.edu.et',
+    extraDomains: ['ju.et'],
+    estimatedPeople: 42000,
+    message: 'We run a paper logbook at three gates. We would like to pilot at the main library gate first.',
+  });
+
   console.log(`
 Seed complete.
 
+  Tenants      : AASTU (university, active) · BDU (university, trial) · HITECH (company, active) · CGOPS (platform operations)
   Institution : Addis Ababa Science and Technology University (AASTU)
   Students    : ${STUDENTS.length}
   Devices     : ${PRODUCTS.length}
@@ -363,6 +541,13 @@ Seed complete.
     student  abel@aastu.edu.et     (has a device reported missing)
     officer  officer@aastu.edu.et  (checkpoint scanning)
     admin    admin@aastu.edu.et    (dashboard, reports, audit log)
+
+  Other tenants (same password):
+    admin    admin@bdu.edu.et      (trial tenant — Bahir Dar University)
+    guard    guard@hitechplc.et    (company tenant — Hi-Tech Solutions PLC)
+
+  Platform console:
+    ops      ops@campusguard.et    (platform operator — /platform, one application awaiting review)
 `);
 
   process.exit(0);

@@ -3,7 +3,17 @@ import { cookies } from 'next/headers';
 import { query, queryOne } from './db';
 import { id } from './ids';
 import { OFFICER_SESSION_TTL_HOURS, SESSION_COOKIE, SESSION_TTL_HOURS } from './constants';
-import type { Institution, Role, SafeUser, SessionRow, SessionUser, StudentProfile } from './types';
+import type {
+  Institution,
+  InstitutionKind,
+  InstitutionStatus,
+  PlatformRole,
+  Role,
+  SafeUser,
+  SessionRow,
+  SessionUser,
+  StudentProfile,
+} from './types';
 
 function sha256(value: string): string {
   return createHash('sha256').update(value).digest('hex');
@@ -45,10 +55,13 @@ const SESSION_SELECT = `
     s.id            AS session_id,
     s.last_seen_at  AS session_last_seen,
     u.id, u.institution_id, u.email, u.full_name, u.phone, u.role, u.status,
+    u.platform_role,
     u.last_login_at, u.password_changed_at, u.failed_login_count, u.locked_until,
     u.created_at, u.updated_at, u.deleted_at,
     i.id AS i_id, i.name AS i_name, i.code AS i_code, i.email_domain AS i_email_domain,
     i.city AS i_city, i.country AS i_country, i.timezone AS i_timezone,
+    i.kind AS i_kind, i.status AS i_status, i.licence_expires_at AS i_licence_expires_at,
+    i.seat_limit AS i_seat_limit, i.logo_url AS i_logo_url, i.data_region AS i_data_region,
     i.scan_retention_days, i.report_retention_days, i.audit_retention_days,
     i.qr_token_rotate_days, i.require_scan_justification, i.allow_aggregate_analytics,
     i.created_at AS i_created_at, i.updated_at AS i_updated_at,
@@ -71,6 +84,13 @@ type SessionJoinRow = {
   i_city: string | null;
   i_country: string;
   i_timezone: string;
+  i_kind: InstitutionKind;
+  i_status: InstitutionStatus;
+  i_licence_expires_at: Date | null;
+  i_seat_limit: number | null;
+  i_logo_url: string | null;
+  i_data_region: string;
+  platform_role: PlatformRole;
   scan_retention_days: number;
   report_retention_days: number;
   audit_retention_days: number;
@@ -116,6 +136,12 @@ function mapSession(row: SessionJoinRow): SessionUser {
     city: row.i_city,
     country: row.i_country,
     timezone: row.i_timezone,
+    kind: row.i_kind,
+    status: row.i_status,
+    licence_expires_at: row.i_licence_expires_at,
+    seat_limit: row.i_seat_limit,
+    logo_url: row.i_logo_url,
+    data_region: row.i_data_region,
     scan_retention_days: row.scan_retention_days,
     report_retention_days: row.report_retention_days,
     audit_retention_days: row.audit_retention_days,
@@ -140,7 +166,14 @@ function mapSession(row: SessionJoinRow): SessionUser {
       }
     : null;
 
-  return { sessionId: row.session_id, user, institution, role: row.role, profile };
+  return {
+    sessionId: row.session_id,
+    user,
+    institution,
+    role: row.role,
+    platformRole: row.platform_role,
+    profile,
+  };
 }
 
 /**

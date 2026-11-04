@@ -1,12 +1,16 @@
 # CampusGuard — Register. Report. Recover.
 
-A campus property **registry and recovery platform** for universities: students register their
-devices, report them missing, and campus security gets a verification tool that is honest about
-what it can and cannot tell them.
+A **multi-tenant** property registry and recovery platform: students and staff register their
+devices, report them missing, and whoever staffs a checkpoint gets a verification tool that is
+honest about what it can and cannot tell them.
+
+One deployment serves many organisations — a university, a college, a company, a government office —
+each with its own email domains, retention windows, licence, seat limit and data region. A platform
+operator provisions them and cannot read their data.
 
 This repository contains a **working implementation** (Next.js + PostgreSQL) plus the research,
 product, architecture and operations documentation needed to run a controlled pilot at one
-university.
+organisation — and to add the second, third and hundredth afterwards.
 
 > **Read this first:** the product deliberately does not claim to prevent theft. It creates the
 > institutional record that makes recovery possible. See
@@ -33,9 +37,13 @@ university.
 | Governance controls | ✅ | Retention windows, justification-gated scan history, audit log |
 | Data-subject rights | ✅ | JSON export, correction/deletion/objection requests, consent records |
 | PWA (installable, offline shell) | ✅ | Service worker + manifest; authenticated API is never cached |
-| Automated tests | ✅ | 17 unit tests, 34 smoke checks, 29 end-to-end workflow checks, load test at 20k devices |
+| Automated tests | ✅ | 21 unit tests, 45 smoke checks, 55 end-to-end workflow checks, 33-page accessibility audit, load test at 20k devices |
 | Production deployment tooling | ⚠️ | Documented + Dockerfile/compose; not yet run against a live Ethiopian host |
-| Multi-institution tenancy | ⚠️ | Data model is tenant-scoped; admin UI assumes one institution |
+| Multi-tenant platform | ✅ | Many organisations per deployment: universities, colleges, companies, government offices — each with its own domains, retention, licence and data region |
+| Platform operator console | ✅ | `/platform` — provision tenants, review applications, set licences and seat limits. Operators see counts, never people |
+| Public onboarding | ✅ | `/join` — an organisation applies; a human approves it |
+
+
 
 The full "what is left to do" list, with priorities and acceptance criteria, is
 [`docs/01-product/implementation-todo.md`](docs/01-product/implementation-todo.md).
@@ -70,6 +78,9 @@ Sign in with password **`Demo#2026`**:
 | Student | `abel@aastu.edu.et` | A laptop already reported missing, and a found report waiting at the desk |
 | Security officer | `officer@aastu.edu.et` | `/security` — scan console with offline cache |
 | Administrator | `admin@aastu.edu.et` | `/admin` — pilot scoreboard, reports, audit log |
+| Administrator, other tenant | `admin@bdu.edu.et` | Same console, different university (a trial tenant) |
+| Gate guard, company tenant | `guard@hitechplc.et` | A company whose "students" are employees |
+| Platform operator | `ops@campusguard.et` | `/platform` — four tenants, one application awaiting review |
 
 ### No PostgreSQL server? Use the bundled one
 
@@ -93,11 +104,11 @@ npm run typecheck                       # TypeScript, no emit
 npm run build                           # production bundle (also validates Next.js route modules)
 npm test                                # unit tests (verification rules, tokens, formatting)
 npm run dev                             # in one terminal …
-npm run smoke                           # … 34 page/API checks as each role
-npm run flow-test                       # 25 end-to-end workflow checks through the HTTP API
+npm run smoke                           # … 45 page/API checks as each role
+npm run flow-test                       # 55 end-to-end workflow checks through the HTTP API
 npm run retention                       # apply each institution's retention windows (deletes)
 npm run load-test                       # 20k-device load test: manifest + verify latency
-npm run a11y                            # axe-core over 28 pages as each role
+npm run a11y                            # axe-core over 33 pages as each role
 npm run backup                          # encrypted dump, verified by restoring it
 ```
 
@@ -165,14 +176,44 @@ that requirement open.
 
 ---
 
-## 5. Repository layout
+## 5. Many organisations, one deployment
+
+`/platform` is the operator's console; `/join` is how an organisation applies to be on it.
+
+```
+        platform operator (/platform)          public application (/join)
+                    │                                     │
+        provision · licence · suspend            reviewed by a human
+                    │                                     │
+                    └──────────► tenants ◄────────────────┘
+                                  │
+        ┌─────────────┬───────────┴──────┬──────────────────┐
+     AASTU          BDU             Hi-Tech PLC        CGOPS
+   university    university          company        (the operator's
+    active         trial              active          own tenant)
+        │            │                   │
+   own domains · own retention · own administrators · own data region
+```
+
+The operator's view is counts: organisations, people, devices, scans, open reports. It is not
+people. Everything an operator does is written to a platform audit log that no tenant can read or
+edit, and an organisation's own administrator can change its name and location but not its domains,
+licence or seat limit — otherwise the platform would be a suggestion.
+
+The full model, including what isolation does and does not depend on, is in
+[`docs/02-architecture/multi-tenancy.md`](docs/02-architecture/multi-tenancy.md).
+
+---
+
+## 6. Repository layout
 
 ```
 db/migrations/        SQL migrations, applied in order by scripts/migrate.ts
 public/               service worker, icons (generated), static assets
 scripts/              migrate, seed, reset, retention, smoke tests, icon generation
 src/app/              Next.js routes
-  (auth: /login, /register)
+  (auth: /login, /register, /join)
+  /platform           platform operator console (provisioning, applications, audit)
   /student            student portal
   /security           officer console
   /admin              administration
@@ -194,7 +235,7 @@ docs/
 
 ---
 
-## 6. Deployment note (Ethiopia)
+## 7. Deployment note (Ethiopia)
 
 Ethiopia's Personal Data Protection Proclamation No. 1321/2024 requires locally collected personal
 data to be stored on servers in Ethiopia [1](https://digitalpolicyalert.org/event/24922-implemented-personal-data-protection-proclamation-proclamation-no-13212024-including-data-localisation-requirements).
@@ -204,7 +245,7 @@ that satisfies that requirement, including backups and the nightly retention job
 
 ---
 
-## 7. Honest limitations
+## 8. Honest limitations
 
 - **No theft prevention.** A determined thief ignores the sticker. This is stated in the product,
   the officer guidance page and the terms.
@@ -219,7 +260,7 @@ that satisfies that requirement, including backups and the nightly retention job
 
 ---
 
-## 8. Licence and provenance
+## 9. Licence and provenance
 
 MIT. Built as a business-and-product proposal turned into a working prototype for Ethiopian higher
 education. Research sources are cited inline in `docs/00-research/`.

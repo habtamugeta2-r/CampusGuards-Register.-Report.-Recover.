@@ -3,6 +3,7 @@ import { getPageSession } from '@/lib/auth';
 import { listScanEvents, scanStats } from '@/lib/repos/scans';
 import { listCheckpoints } from '@/lib/repos/misc';
 import { ScanHistoryLookup } from '@/components/admin-forms';
+import { memberLabels } from '@/lib/constants';
 import { Alert, Badge, Card, CardHeader, EmptyState, PageHeader, Stat, Table } from '@/components/ui';
 import { formatDateTime } from '@/lib/format';
 import { SCAN_RESULT_META } from '@/lib/constants';
@@ -61,7 +62,7 @@ export default async function AdminScansPage({
           subtitle="Restricted. A written justification is required and stored permanently in the audit log."
         />
         <div className="p-4">
-          <ScanHistoryLookup />
+          <ScanHistoryLookup memberIdLabel={memberLabels(session.institution.kind).idLabel} />
           <div className="mt-3">
             <Alert tone="warn" title="Use this for investigations, not curiosity">
               Pulling a person’s movement record without a documented reason is a misuse of the system and is visible to

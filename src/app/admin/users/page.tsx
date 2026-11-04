@@ -4,7 +4,7 @@ import { listUsers } from '@/lib/repos/users';
 import { UserRowActions } from '@/components/admin-forms';
 import { Badge, Card, EmptyState, PageHeader, Table } from '@/components/ui';
 import { formatDate } from '@/lib/format';
-import { ROLE_LABEL } from '@/lib/constants';
+import { ROLE_LABEL, memberLabels } from '@/lib/constants';
 import type { Role, UserStatus } from '@/lib/types';
 
 export const metadata = { title: 'People' };
@@ -24,6 +24,7 @@ export default async function AdminUsersPage({
 }) {
   const session = await getPageSession(['ADMIN']);
   const { q, role } = await searchParams;
+  const labels = memberLabels(session.institution.kind);
 
   const { rows, total } = await listUsers(session.institution.id, {
     search: q,
@@ -39,10 +40,16 @@ export default async function AdminUsersPage({
       />
 
       <form className="mb-4 flex flex-wrap gap-2" method="get">
-        <input aria-label="Search name, email or student ID" name="q" defaultValue={q ?? ''} className="input max-w-sm" placeholder="Search name, email or student ID" />
+        <input
+          aria-label={`Search name, email or ${labels.idLabel.toLowerCase()}`}
+          name="q"
+          defaultValue={q ?? ''}
+          className="input max-w-sm"
+          placeholder={`Search name, email or ${labels.idLabel.toLowerCase()}`}
+        />
         <select aria-label="Filter by role" name="role" className="select w-auto" defaultValue={role ?? 'ALL'}>
           <option value="ALL">All roles</option>
-          <option value="STUDENT">Students</option>
+          <option value="STUDENT">{labels.plural}</option>
           <option value="SECURITY">Security officers</option>
           <option value="ADMIN">Administrators</option>
         </select>

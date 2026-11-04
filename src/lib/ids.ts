@@ -16,6 +16,8 @@ export function newId(prefix: string, length = 20): string {
 
 export const id = {
   institution: () => newId('ins'),
+  domain: () => newId('ind'),
+  request: () => newId('irq'),
   user: () => newId('usr'),
   profile: () => newId('prf'),
   session: () => newId('ses'),

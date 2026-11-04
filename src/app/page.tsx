@@ -61,7 +61,7 @@ export default async function HomePage() {
       <section className="mt-12 max-w-3xl">
         <p className="text-sm font-medium uppercase tracking-wide text-brand-700">Register. Report. Recover.</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-          A campus property registry that helps a university return what goes missing.
+          A property registry that helps an organisation return what goes missing.
         </h1>
         <p className="mt-4 text-lg text-slate-600">
           Thousands of students carry laptops, phones and instruments through shared spaces every day. When something
@@ -74,6 +74,9 @@ export default async function HomePage() {
           </Link>
           <Link href="/found" className="btn-secondary">
             Report a found device
+          </Link>
+          <Link href="/join" className="btn-secondary">
+            Bring your organisation
           </Link>
         </div>
       </section>
@@ -132,10 +135,12 @@ export default async function HomePage() {
       </section>
 
       <section className="mt-10">
-        <Alert tone="info" title="Built for Ethiopian universities">
-          Data is stored in a PostgreSQL database designed to be hosted inside Ethiopia, in line with Article 22 of the
-          Personal Data Protection Proclamation No. 1321/2024. Scan records are retained for a short, configurable
-          window and are never used for movement analysis.
+        <Alert tone="info" title="One platform, many organisations">
+          Each university, college, company or government office gets its own tenant: its own email domains, retention
+          windows, administrators and data — including where that data is allowed to live. Deployment starts in
+          Ethiopia, hosted inside the country in line with Article 22 of the Personal Data Protection Proclamation
+          No. 1321/2024. Scan records are retained for a short, configurable window and are never used for movement
+          analysis.
         </Alert>
       </section>
 

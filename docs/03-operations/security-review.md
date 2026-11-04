@@ -16,9 +16,10 @@ Written 2026-11-04, against the code in this repository at that date.
 | Activity | Coverage |
 | --- | --- |
 | Manual read of every route handler, the auth/session layer, the verification engine and the SQL migrations | All of `src/app/api/**`, `src/lib/**`, `db/migrations/**` |
-| Automated tests | 21 unit tests, 34 smoke checks, 29 end-to-end workflow checks, load test at 20k devices |
+| Automated tests | 21 unit tests, 45 smoke checks, 55 end-to-end workflow checks, 33-page accessibility audit, load test at 20k devices |
 | Probing the running application through its HTTP API | Role separation, erasure behaviour, justification gating, error handling |
 | Dependency vulnerability scan (`npm audit`) | Findings below |
+| Multi-tenant isolation | Cross-tenant lookup, seat limits, tenant status, platform API reachability — covered by 17 checks in `npm run flow-test` |
 | **Not** done | Penetration test, fuzzing, infrastructure/network hardening review, formal review of the cryptography in `src/lib/offline/cache.ts`, dependency licence review |
 
 ---
@@ -40,6 +41,8 @@ anti-surveillance rules in the product are not decoration.
 | Administrator abusing access | Quietly build a movement profile | Justification-gated history; every access audited with actor, justification, IP; `allow_aggregate_analytics` defaults to false | An admin can still approve their own justifications. Detected after the fact by audit review, not prevented — the runbook says review `scan.history.access` rows weekly |
 | Institution / state request for data | Bulk surveillance | No aggregate analytics by default; retention windows delete scan events (90 d default); export is per-data-subject | A university with database credentials can read everything. This is why the compliance pack needs a written prohibited-uses clause, not just technical controls |
 | External attacker on the app | Take over accounts, exfiltrate the registry | bcrypt(12), 8-attempt lockout, server-side sessions hashed at rest, RBAC on every route, Zod validation, parameterised SQL everywhere | See findings F-4 and F-5 |
+| A platform operator | Read another organisation's data | A separate grant (`platform_role`) with its own guard; the platform API returns counts only; actions logged to `platform_audit_logs`, which no tenant can edit | The console could be extended to leak tenant data by a future change. Isolation inside tenants is enforced in application code, not by the database — see F-13 |
+| One tenant reaching another | Read a person or device across tenants | Every repository query filters on `session.institution.id`; no route accepts a tenant id from the request; domain lookups are globally unique | F-13: a single missing `WHERE institution_id = $1` is a cross-tenant leak |
 
 ---
 
@@ -179,6 +182,31 @@ by an administrator revoke sessions correctly, so the high-risk case is covered.
 - Before the pilot: add a "sign out other devices" action and a session list. Small, and expected
   by the privacy notice the student signs.
 
+### F-13 · Isolation between tenants is enforced in application code — **open** (high if violated, low likelihood today)
+
+Since the platform became multi-tenant (ADR-0007), the boundary between organisations is an
+`institution_id` column that every query is expected to filter on. Nothing in the database enforces
+it. One forgotten filter in a new repository function is a cross-tenant data leak, and the tests
+that would catch it only cover the paths they were written for.
+
+Mitigations in place: repository functions take the tenant id as a required argument; no route reads
+a tenant id from a request; `resolveStudent` filters by institution; the flow test asserts that a
+cross-tenant lookup returns 404 and that the platform overview contains no person's email.
+
+- Before any second real organisation is onboarded: PostgreSQL row-level security keyed on a
+  per-request tenant setting, so a missing filter fails **closed**. Tracked as 5.14.
+
+### F-14 · Platform operators are a new, concentrated risk — **open** (medium)
+
+A `PLATFORM_ADMIN` can provision, suspend and re-license every tenant. That is a lot of power in one
+account, and operators are ordinary users, so the accounts are only as safe as their own password
+hygiene.
+
+- Mitigations in place: the console is a separate tree with its own guard; the API returns counts
+  only (asserted by test); every action is written to `platform_audit_logs`.
+- Before the pilot: require two operators for destructive actions such as closing a tenant, alert on
+  any new `platform_audit_logs` row, and review that log weekly.
+
 ### F-12 · No dependency pinning or lockfile policy in CI — **open** (low)
 
 CI runs `npm ci` from the committed lockfile (good) but nothing fails the build on new advisories.
@@ -190,6 +218,10 @@ CI runs `npm ci` from the committed lockfile (good) but nothing fails the build 
 ## 5. Required before the pilot (2.23 exit criteria)
 
 - [ ] Independent security review by someone who did not write this code
+- [ ] F-13 row-level security between tenants, before a second real organisation is onboarded
+- [ ] F-14 two-person rule for closing a tenant, plus alerting on platform audit rows
+- [ ] F-13 row-level security between tenants, before a second real organisation is onboarded
+- [ ] F-14 two-person rule for closing a tenant, and alerting on platform audit rows
 - [ ] F-4 registration throttling and non-enumerating response
 - [ ] F-6 `TRUSTED_PROXY` handling
 - [ ] F-9 database-enforced append-only audit log

@@ -1,13 +1,22 @@
 # Data model
 
-Schema: [`db/migrations/0001_init.sql`](../../db/migrations/0001_init.sql) and
-[`0002_identifier_uniqueness.sql`](../../db/migrations/0002_identifier_uniqueness.sql).
+Schema: [`0001_init.sql`](../../db/migrations/0001_init.sql),
+[`0002_identifier_uniqueness.sql`](../../db/migrations/0002_identifier_uniqueness.sql),
+[`0003_multi_tenancy.sql`](../../db/migrations/0003_multi_tenancy.sql) and
+[`0004_institution_domain_sync.sql`](../../db/migrations/0004_institution_domain_sync.sql).
+
+Every table of tenant data carries `institution_id`. The tenant model — types, lifecycle, domains,
+licences, data region and the platform operator's grant — is described in
+[`multi-tenancy.md`](multi-tenancy.md).
 
 ## 1. Entities
 
 | Table | Purpose | Retention |
 | --- | --- | --- |
-| `institutions` | Tenant; also holds the governance knobs | Life of the contract |
+| `institutions` | Tenant (university, college, company, government office, NGO); also holds the governance knobs | Life of the contract |
+| `institution_domains` | Email domains claimed by a tenant, globally unique | Life of the tenant |
+| `institution_requests` | Applications to join the platform, awaiting a human decision | Until decided |
+| `platform_audit_logs` | What the platform operator did, deliberately outside every tenant | Life of the platform |
 | `users` | Accounts, roles, status; soft-deleted | Until account deletion |
 | `student_profiles` | University ID, department, year, optional Fayda ID | Until account deletion |
 | `sessions` | Server-side sessions, revocable | Deleted ~1 day after expiry |
@@ -91,7 +100,28 @@ phones, generic accessories, and students who type the model number instead of t
 must stay globally unique; serials do not. The fix keeps uniqueness where it matters (partial unique
 index on QR tokens) and makes a repeated serial a *signal* rather than an error.
 
-## 6. Migration discipline
+## 6. Tenant-scoped tables (migration 0003)
+
+Migration 0003 did not add a tenant mechanism — `institution_id` was there from the start. What it
+added was the *operation* of many tenants:
+
+- `institutions.kind`, `.status`, `.licence_expires_at`, `.seat_limit`, `.data_region`, `.logo_url` —
+  so one row can describe a university on a trial, a company on a paid licence, or a government
+  office whose data may not leave the country.
+- `institution_domains` — many domains per tenant, globally unique, backfilled from the old
+  `institutions.email_domain` column. Domain lookup is now a single function against one table
+  (`findInstitutionByDomain`); the duplicate implementation was deleted rather than kept in sync.
+- `institution_requests` — the public application queue, including the one anonymous write in the
+  API.
+- `platform_audit_logs` — the operator's trail, deliberately *not* in a tenant's own `audit_logs`,
+  which that tenant's administrators can read.
+- `users.platform_role` — a separate axis from the institution role, default `NONE`.
+
+Migration 0004 adds a trigger that keeps `institution_domains` in step with
+`institutions.email_domain` — without it, anything that inserts a tenant with plain SQL creates an
+organisation nobody can sign in to (`institution_domains` is what the login path reads).
+
+## 7. Migration discipline
 
 `scripts/migrate.ts` applies files in lexicographic order, records each with a SHA-256 checksum, and
 **refuses to run if an already-applied file has changed**. Editing history is how teams end up with

@@ -385,7 +385,7 @@ export function SettingsForm({
   );
 }
 
-export function ScanHistoryLookup() {
+export function ScanHistoryLookup({ memberIdLabel = 'Member ID' }: { memberIdLabel?: string }) {
   const [rows, setRows] = useState<Array<Record<string, unknown>> | null>(null);
   const [state, setState] = useState<Feedback>({ pending: false });
 
@@ -413,7 +413,13 @@ export function ScanHistoryLookup() {
           }
         }}
       >
-        <input aria-label="Student ID or email" name="identifier" className="input" placeholder="Student ID or email" required />
+        <input
+          aria-label={`${memberIdLabel} or email`}
+          name="identifier"
+          className="input"
+          placeholder={`${memberIdLabel} or email`}
+          required
+        />
         <input aria-label="Why do you need this?" name="justification" className="input" placeholder="Why do you need this? (recorded)" required />
         <button className="btn-primary" disabled={state.pending}>
           {state.pending ? <Spinner label="Looking up…" /> : 'Look up history'}

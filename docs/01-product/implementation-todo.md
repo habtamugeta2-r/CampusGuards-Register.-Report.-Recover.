@@ -87,6 +87,34 @@ questions have real answers.
 
 ---
 
+## Phase 2b — Platform / multi-tenancy · ✅ done
+
+Turning a single-university prototype into a platform that can hold many organisations. Model in
+[`docs/02-architecture/multi-tenancy.md`](../02-architecture/multi-tenancy.md), rationale in
+[ADR-0007](../02-architecture/adr/0007-multi-tenant-platform.md).
+
+| # | Task | Status |
+| --- | --- | --- |
+| 5.1 | Tenant type, lifecycle (trial → active → suspended/closed), licence and seat limit | ✅ migration `0003_multi_tenancy.sql` |
+| 5.2 | Many email domains per tenant, globally unique | ✅ `institution_domains`; domain lookup now has one source of truth |
+| 5.3 | Platform operator role, separate from the institution ADMIN role | ✅ `users.platform_role`, `requirePlatformAdmin()` |
+| 5.4 | Operator console: overview, organisations, applications, audit | ✅ `/platform` |
+| 5.5 | Provision a tenant, edit status/licence/seats/region, add and remove domains | ✅ `/api/platform/institutions[/:id][/domains]` |
+| 5.6 | Public application to join + human approval that provisions the tenant | ✅ `/join`, `/api/platform/requests` |
+| 5.7 | First administrator provisioned with a one-time password, shown once | ✅ approved applications create `admin@<domain>` |
+| 5.8 | Tenant self-service profile, deliberately narrow | ✅ `/api/admin/organisation` — name, city, country, timezone only |
+| 5.9 | Registration and sign-in respect tenant status, licence and seat limits | ✅ blocked on suspended/closed and over-limit; existing accounts never locked out |
+| 5.10 | Platform audit log, outside every tenant | ✅ `platform_audit_logs` |
+| 5.11 | `data_region` per tenant | ✅ column; one deployment per region is the growth path |
+| 5.12 | Demo data across four tenants | ✅ AASTU, BDU (trial), Hi-Tech PLC (company), CGOPS (operator) |
+| 5.13 | Cross-tenant isolation and lifecycle covered by the end-to-end test | ✅ 17 new checks in `npm run flow-test` |
+| 5.14 | Row-level security so isolation fails closed, not open | ⬜ **the most important remaining hardening step** |
+| 5.15 | Per-tenant rate limiting and a fair-share queue for manifest downloads | ⬜ before a noisy tenant can hurt another |
+| 5.16 | Tenant export and hard-delete job | ⬜ needed when an organisation leaves |
+| 5.17 | Per-tenant branding (logo, colour) | ⬜ cosmetic, but it is what makes a platform feel owned |
+
+---
+
 ## Phase 3 — Pilot (8–12 weeks) · ⬜ not started
 
 | # | Task | Notes |

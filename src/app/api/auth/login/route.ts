@@ -1,7 +1,7 @@
 import { route, ok, fail, readJson, clientIp, userAgent } from '@/lib/http';
 import { loginSchema } from '@/lib/validation';
 import { verifyPassword } from '@/lib/password';
-import { findInstitutionByDomain } from '@/lib/repos/misc';
+import { findInstitutionByDomain } from '@/lib/repos/platform';
 import { findUserByEmail, recordFailedLogin, recordSuccessfulLogin } from '@/lib/repos/users';
 import { createSession } from '@/lib/session';
 import { logAudit } from '@/lib/audit';
@@ -21,6 +21,10 @@ export const POST = route(async (req: Request) => {
 
   const domain = body.email.split('@')[1] ?? '';
   const institution = await findInstitutionByDomain(domain);
+
+  // Suspended and closed organisations: block sign-in, but only after the
+  // password has been checked, so the endpoint cannot be used to discover which
+  // organisations exist or which addresses have accounts.
   const user = institution ? await findUserByEmail(institution.id, body.email) : null;
 
   // Identical response for unknown accounts, wrong passwords and disabled
@@ -47,8 +51,25 @@ export const POST = route(async (req: Request) => {
     return invalid();
   }
 
+  if (institution && (institution.status === 'SUSPENDED' || institution.status === 'CLOSED')) {
+    await logAudit({
+      institutionId: institution.id,
+      actorId: user.id,
+      action: 'auth.login_blocked_tenant_status',
+      entityType: 'institution',
+      entityId: institution.id,
+      metadata: { status: institution.status },
+      ip,
+      userAgent: ua,
+    });
+    return fail(
+      403,
+      `${institution.name}’s account is ${institution.status.toLowerCase()}. Contact your administrator.`,
+    );
+  }
+
   if (user.status !== 'ACTIVE') {
-    return fail(403, 'This account is not active. Contact your university’s CampusGuard administrator.');
+    return fail(403, 'This account is not active. Contact your organisation’s CampusGuard administrator.');
   }
 
   await recordSuccessfulLogin(user.id);

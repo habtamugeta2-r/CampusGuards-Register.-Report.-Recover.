@@ -49,9 +49,11 @@ export async function findCheckpointById(checkpointId: string, institutionId: st
 // Institutions & settings
 // ---------------------------------------------------------------------------
 
-export async function findInstitutionByDomain(domain: string): Promise<Institution | null> {
-  return queryOne<Institution>('SELECT * FROM institutions WHERE lower(email_domain) = lower($1)', [domain]);
-}
+/**
+ * Domain lookup lives in repos/platform.ts, against institution_domains: an
+ * organisation can claim more than one domain, and this module should not grow
+ * a second, subtly different version of the same rule.
+ */
 
 export async function listInstitutions(): Promise<Institution[]> {
   return query<Institution>('SELECT * FROM institutions ORDER BY code ASC');

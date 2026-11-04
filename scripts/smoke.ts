@@ -24,6 +24,9 @@ const ROUTES: Record<string, string[]> = {
     '/student/privacy',
   ],
   'officer@aastu.edu.et': ['/security', '/security/history', '/security/guidance', '/student/notifications'],
+  'ops@campusguard.et': ['/platform', '/platform/organisations', '/platform/requests', '/platform/audit'],
+  'admin@bdu.edu.et': ['/admin', '/admin/products', '/admin/users', '/admin/settings'],
+  'guard@hitechplc.et': ['/security', '/security/guidance'],
   'admin@aastu.edu.et': [
     '/admin',
     '/admin/reports',
@@ -37,7 +40,7 @@ const ROUTES: Record<string, string[]> = {
   ],
 };
 
-const PUBLIC_ROUTES = ['/', '/login', '/register', '/found', '/legal/privacy', '/legal/terms', '/legal/data-rights', '/offline'];
+const PUBLIC_ROUTES = ['/', '/login', '/register', '/join', '/found', '/legal/privacy', '/legal/terms', '/legal/data-rights', '/offline'];
 
 let failures = 0;
 let checks = 0;

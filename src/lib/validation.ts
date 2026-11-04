@@ -7,7 +7,7 @@ export const registerSchema = z.object({
   fullName: z.string().trim().min(2, 'Enter your full name.').max(120),
   email: emailSchema,
   password: z.string().min(10, 'Use at least 10 characters.').max(200),
-  studentId: z.string().trim().min(3, 'Enter your university ID number.').max(40),
+  studentId: z.string().trim().min(3, 'Enter the ID number your organisation gave you.').max(40),
   department: z.string().trim().max(80).optional().or(z.literal('')),
   phone: z.string().trim().max(30).optional().or(z.literal('')),
   consents: z.array(z.string()).default([]),
@@ -48,7 +48,7 @@ export const foundReportSchema = z.object({
 
 export const borrowSchema = z.object({
   productId: z.string().min(1),
-  borrowerIdentifier: z.string().trim().min(3, 'Enter the borrower’s university ID or email.').max(160),
+  borrowerIdentifier: z.string().trim().min(3, 'Enter the borrower’s ID or email.').max(160),
   endsAt: z.string().min(1, 'Choose an end date.'),
   reason: z.string().trim().max(240).optional().or(z.literal('')),
 });

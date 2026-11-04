@@ -1,5 +1,29 @@
 # Deployment
 
+## 0. One deployment, many organisations
+
+A single deployment serves many tenants. Before provisioning the second one, decide the two things
+that are expensive to change later:
+
+1. **Data region.** `institutions.data_region` records where that tenant's data must physically
+   live. If you will ever serve organisations in two countries with residency laws — Ethiopia's
+   Proclamation 1321/2024 Art. 22 is the first, not the last — run **one deployment per region**.
+   Do not rely on a flag inside a shared database; the obligation is about where the disk is.
+2. **Who operates the platform, and how their actions are reviewed.** Operators are the only actors
+   who can touch every tenant. Their console is `/platform`, their actions are logged in
+   `platform_audit_logs`, and a tenant administrator cannot read or edit that log. Review it on the
+   same weekly cadence as a tenant's own audit log.
+
+Provisioning is covered in
+[`multi-tenancy.md`](../02-architecture/multi-tenancy.md#4-onboarding): an organisation applies at
+`/join`, a human approves it, and the tenant is created with its domains and its first
+administrator.
+
+Capacity: the load test measures one 20,000-device tenant at ~130 ms p95 for the offline manifest
+and ~57 ms p95 for a scan. Tenants are independent in that measurement, so N small tenants cost
+about the same as one tenant holding all their devices — until per-tenant rate limiting exists
+(implementation to-do 5.15).
+
 ## 1. Hard requirement: host the database in Ethiopia
 
 Personal Data Protection Proclamation No. 1321/2024, Article 22, requires locally collected personal
@@ -74,7 +98,7 @@ The scanning console needs `getUserMedia`, which requires a secure context. Serv
 valid certificate. If the app is ever embedded in another page, that page's iframe needs
 `allow="camera"` — the app itself has fallbacks (image upload, manual entry) when it does not get it.
 
-## 5. Backups
+## 5. Backups (every tenant on this deployment)
 
 | Item | Cadence | Retention | Notes |
 | --- | --- | --- | --- |
@@ -118,6 +142,11 @@ Schedule it:
 15 2 * * *  cd /srv/campusguard && DATABASE_URL=… BACKUP_PASSPHRASE=… BACKUP_DIR=/srv/backups/campusguard \
               ./scripts/backup.sh backup >> /var/log/campusguard-backup.log 2>&1
 ```
+
+Backups cover the whole deployment, therefore every tenant on it. Restoring on a shared deployment
+restores everyone: restoring one organisation means restoring to a scratch instance and copying that
+tenant's rows across. Say so in the tenancy agreement — a tenant that expects "restore our data"
+without affecting others needs the per-tenant export job (implementation to-do 5.16) first.
 
 Test the restore on a scratch VM, not in production.
 

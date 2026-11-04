@@ -24,4 +24,7 @@ export const apiPost = <T = unknown>(path: string, body?: unknown) =>
 export const apiPatch = <T = unknown>(path: string, body?: unknown) =>
   api<T>(path, { method: 'PATCH', body: JSON.stringify(body ?? {}) });
 
-export const apiDelete = <T = unknown>(path: string) => api<T>(path, { method: 'DELETE' });
+/** DELETE with an optional body — the platform API takes ids in the body so
+ *  they never land in a URL, a log line or a browser history entry. */
+export const apiDelete = <T = unknown>(path: string, body?: unknown) =>
+  api<T>(path, { method: 'DELETE', body: body === undefined ? undefined : JSON.stringify(body) });
