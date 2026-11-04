@@ -69,3 +69,9 @@ jobs:
 
       - name: Workflow test
         run: npm run flow-test
+
+      - name: Accessibility audit
+        run: npm run a11y
+
+      - name: Load test at pilot scale
+        run: npm run load-test

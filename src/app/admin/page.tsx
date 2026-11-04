@@ -169,7 +169,7 @@ export default async function AdminDashboard() {
       </div>
 
       {baseline ? (
-        <p className="mt-6 text-xs text-slate-400">
+        <p className="mt-6 text-xs text-slate-500">
           Baseline source: {baseline.source} · period {formatDateTime(baseline.period_start)} –{' '}
           {formatDateTime(baseline.period_end)}
         </p>

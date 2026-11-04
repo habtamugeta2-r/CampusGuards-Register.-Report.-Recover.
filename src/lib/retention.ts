@@ -153,9 +153,17 @@ export async function eraseUserData(userId: string, institutionId: string): Prom
   return { scansAnonymised: scanRow?.count ?? 0, reportsAnonymised: reportRow?.count ?? 0 };
 }
 
-export async function lastRetentionRun(institutionId: string) {
+/**
+ * Most recent retention run. Pass null to ask across every institution, which
+ * is what a deployment-wide monitor wants to know.
+ */
+export async function lastRetentionRun(institutionId: string | null) {
   return queryOne<{ ran_at: Date; notes: string | null }>(
-    'SELECT ran_at, notes FROM retention_runs WHERE institution_id = $1 ORDER BY ran_at DESC LIMIT 1',
+    `SELECT ran_at, notes
+       FROM retention_runs
+      WHERE ($1::text IS NULL OR institution_id = $1)
+      ORDER BY ran_at DESC
+      LIMIT 1`,
     [institutionId],
   );
 }

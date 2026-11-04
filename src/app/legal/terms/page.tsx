@@ -5,7 +5,7 @@ export const metadata = { title: 'Terms of use' };
 
 export default function TermsPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
+    <main className="mx-auto max-w-3xl px-4 py-10">
       <PageHeader
         title="Terms of use"
         description="Plain-language terms for students, officers and administrators using CampusGuard. Version 2026-01-01."
@@ -72,6 +72,6 @@ export default function TermsPage() {
           Your data rights
         </Link>
       </p>
-    </div>
+    </main>
   );
 }

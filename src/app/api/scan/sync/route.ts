@@ -18,11 +18,13 @@ export const POST = route(async (req: Request) => {
   const session = await requireRole('SECURITY', 'ADMIN');
   const body = offlineSyncSchema.parse(await readJson(req));
 
-  let checkpointName: string | null = null;
-  if (body.checkpointId) {
-    const checkpoint = await findCheckpointById(body.checkpointId, session.institution.id);
-    checkpointName = checkpoint?.name ?? null;
-  }
+  // As in the live route: use the checkpoint we resolved for this institution,
+  // not the raw id from the device. A stale id must not discard an officer's
+  // entire offline batch.
+  const checkpoint = body.checkpointId
+    ? await findCheckpointById(body.checkpointId, session.institution.id)
+    : null;
+  const checkpointName = checkpoint?.name ?? null;
 
   const results: Array<{ token: string; result: string }> = [];
 
@@ -34,7 +36,7 @@ export const POST = route(async (req: Request) => {
         officerId: session.user.id,
         officerName: session.user.full_name,
         rawToken: scan.token,
-        checkpointId: body.checkpointId || null,
+        checkpointId: checkpoint?.id ?? null,
         checkpointName,
         carrierIdentifier: scan.carrierIdentifier || null,
         carrierIdShown: Boolean(scan.carrierIdShown),

@@ -38,12 +38,12 @@ export default async function ScanHistoryPage() {
           <Table
             head={
               <>
-                <th className="th">When</th>
-                <th className="th">Result</th>
-                <th className="th">Device</th>
-                <th className="th">Checkpoint</th>
-                <th className="th">Source</th>
-                <th className="th">Code</th>
+                <th scope="col" className="th">When</th>
+                <th scope="col" className="th">Result</th>
+                <th scope="col" className="th">Device</th>
+                <th scope="col" className="th">Checkpoint</th>
+                <th scope="col" className="th">Source</th>
+                <th scope="col" className="th">Code</th>
               </>
             }
           >

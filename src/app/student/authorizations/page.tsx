@@ -33,11 +33,11 @@ export default async function AuthorizationsPage() {
           <Table
             head={
               <>
-                <th className="th">Device</th>
-                <th className="th">Borrower</th>
-                <th className="th">Until</th>
-                <th className="th">Reason</th>
-                <th className="th" />
+                <th scope="col" className="th">Device</th>
+                <th scope="col" className="th">Borrower</th>
+                <th scope="col" className="th">Until</th>
+                <th scope="col" className="th">Reason</th>
+                <th scope="col" className="th"><span className="sr-only">Actions</span></th>
               </>
             }
           >
@@ -54,7 +54,7 @@ export default async function AuthorizationsPage() {
                 <td className="td">{authorization.reason ?? '—'}</td>
                 <td className="td text-right">
                   {authorization.revoked_at ? (
-                    <span className="text-xs text-slate-400">Revoked</span>
+                    <span className="text-xs text-slate-500">Revoked</span>
                   ) : (
                     <RevokeAuthorizationButton authorizationId={authorization.id} />
                   )}
@@ -76,10 +76,10 @@ export default async function AuthorizationsPage() {
           <Table
             head={
               <>
-                <th className="th">Device</th>
-                <th className="th">Owner</th>
-                <th className="th">Until</th>
-                <th className="th">Reason</th>
+                <th scope="col" className="th">Device</th>
+                <th scope="col" className="th">Owner</th>
+                <th scope="col" className="th">Until</th>
+                <th scope="col" className="th">Reason</th>
               </>
             }
           >

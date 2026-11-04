@@ -45,15 +45,15 @@ export function FoundReportForm({ token, showTokenField = true }: { token?: stri
         }
       }}
     >
-      {state.error ? <Alert tone="danger">{state.error}</Alert> : null}
-      {state.done ? <Alert tone="ok">{state.message}</Alert> : null}
+      {state.error ? <Alert tone="danger" live="assertive">{state.error}</Alert> : null}
+      {state.done ? <Alert tone="ok" live="polite">{state.message}</Alert> : null}
 
       {!state.done ? (
         <>
           {showTokenField ? (
             <div>
               <label className="label" htmlFor="token">
-                Code on the label <span className="font-normal text-slate-400">(optional if you do not have it)</span>
+                Code on the label <span className="font-normal text-slate-500">(optional if you do not have it)</span>
               </label>
               <input
                 id="token"
@@ -74,20 +74,20 @@ export function FoundReportForm({ token, showTokenField = true }: { token?: stri
           </div>
           <div>
             <label className="label" htmlFor="description">
-              Anything worth noting? <span className="font-normal text-slate-400">(optional)</span>
+              Anything worth noting? <span className="font-normal text-slate-500">(optional)</span>
             </label>
             <textarea id="description" name="description" rows={2} className="input" />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="label" htmlFor="finderName">
-                Your name <span className="font-normal text-slate-400">(optional)</span>
+                Your name <span className="font-normal text-slate-500">(optional)</span>
               </label>
               <input id="finderName" name="finderName" className="input" />
             </div>
             <div>
               <label className="label" htmlFor="finderContact">
-                Contact <span className="font-normal text-slate-400">(optional, desk use only)</span>
+                Contact <span className="font-normal text-slate-500">(optional, desk use only)</span>
               </label>
               <input id="finderContact" name="finderContact" className="input" placeholder="phone or email" />
             </div>

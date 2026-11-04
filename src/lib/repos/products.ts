@@ -54,7 +54,11 @@ export async function findProductByToken(token: string): Promise<ProductRow | nu
      JOIN products p ON p.id = pi.product_id
      JOIN users u    ON u.id = p.owner_id
      LEFT JOIN student_profiles sp ON sp.user_id = u.id
-     WHERE pi.value = $1 AND pi.revoked_at IS NULL`,
+     WHERE pi.value = $1
+       AND pi.revoked_at IS NULL
+       -- See offlineManifest: a deleted owner's label resolves to
+       -- "not registered" rather than showing an erased person's name.
+       AND u.deleted_at IS NULL`,
     [token],
   );
 }
@@ -274,6 +278,12 @@ export async function offlineManifest(institutionId: string, limit = 20000): Pro
         AND pi.kind = 'QR_TOKEN'
         AND pi.revoked_at IS NULL
         AND p.status <> 'RETIRED'
+        -- A deleted account means the person asked to be removed. Their device
+        -- must not keep circulating on every officer's phone with their name
+        -- attached, so it leaves the registry snapshot immediately. Historical
+        -- reports and scan events are untouched: those are governed by the
+        -- retention windows, not by this filter.
+        AND u.deleted_at IS NULL
       ORDER BY p.registered_at DESC
       LIMIT $2`,
     [institutionId, limit],

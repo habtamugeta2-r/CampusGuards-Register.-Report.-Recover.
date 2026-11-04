@@ -147,6 +147,7 @@ async function main() {
   const officerCookie = await login('officer@aastu.edu.et', 'Demo#2026');
   const checkpoints = await call('GET', '/api/checkpoints', { cookie: officerCookie });
   const checkpointId = checkpoints.body.rows?.[0]?.id;
+  const checkpointName: string | undefined = checkpoints.body.rows?.[0]?.name;
 
   const scan = await call('POST', '/api/scan/verify', {
     cookie: officerCookie,
@@ -169,12 +170,30 @@ async function main() {
     body: { token: token.toLowerCase(), checkpointId, carrierIdentifier: studentId, carrierIdShown: true },
   });
   expect('manual entry and lower-case input also work', manualScan.status === 200, manualScan.body);
+  expect(
+    'a known checkpoint is attached to the scan',
+    manualScan.status === 200 && manualScan.body.checkpoint === checkpointName,
+    manualScan.body,
+  );
 
   const badScan = await call('POST', '/api/scan/verify', {
     cookie: officerCookie,
     body: { token: 'not-a-real-code' },
   });
   expect('a nonsense code is rejected cleanly', badScan.status === 400, badScan.body);
+
+  // Regression: a phone that has been offline can present a checkpoint id that
+  // no longer exists. The scan must still be recorded (with no checkpoint)
+  // rather than failing on the foreign key and losing the officer's evidence.
+  const staleCheckpointScan = await call('POST', '/api/scan/verify', {
+    cookie: officerCookie,
+    body: { token, checkpointId: 'chk_deleted_or_unknown' },
+  });
+  expect(
+    'a scan with a stale checkpoint id is still recorded',
+    staleCheckpointScan.status === 200 && staleCheckpointScan.body.checkpoint === null,
+    staleCheckpointScan.body,
+  );
 
   // --- 7. Offline batch ----------------------------------------------------
   const sync = await call('POST', '/api/scan/sync', {
@@ -243,6 +262,29 @@ async function main() {
     cookie: adminCookie,
   });
   expect('test account removed', deleted.status === 200, deleted.body);
+
+  // --- erasure -------------------------------------------------------------
+  // A deleted account must disappear from the registry an officer carries, and
+  // its label must resolve to "not registered" rather than showing the name of
+  // someone who asked to be erased. Historical reports stay: those are governed
+  // by the retention windows.
+  const afterDelete = await call('POST', '/api/scan/verify', {
+    cookie: officerCookie,
+    body: { token },
+  });
+  expect(
+    'a deleted student’s label no longer resolves to a person',
+    afterDelete.status === 200 && afterDelete.body.result === 'NOT_REGISTERED',
+    afterDelete.body,
+  );
+
+  const manifestAfter = await call('GET', '/api/scan/manifest', { cookie: officerCookie });
+  expect(
+    'a deleted student’s device is gone from the officer’s offline registry',
+    manifestAfter.status === 200 &&
+      (manifestAfter.body.rows ?? []).every((row: { token: string }) => row.token !== token),
+    manifestAfter.body,
+  );
 
   console.log(failures ? `\n${failures} failure(s).` : '\nAll workflow checks passed.');
   process.exit(failures ? 1 : 0);

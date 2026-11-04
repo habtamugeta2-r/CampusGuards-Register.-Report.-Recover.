@@ -33,11 +33,11 @@ export default async function AdminCheckpointsPage() {
           <Table
             head={
               <>
-                <th className="th">Name</th>
-                <th className="th">Location</th>
-                <th className="th">Created</th>
-                <th className="th">Status</th>
-                <th className="th" />
+                <th scope="col" className="th">Name</th>
+                <th scope="col" className="th">Location</th>
+                <th scope="col" className="th">Created</th>
+                <th scope="col" className="th">Status</th>
+                <th scope="col" className="th"><span className="sr-only">Actions</span></th>
               </>
             }
           >

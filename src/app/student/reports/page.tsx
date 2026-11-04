@@ -47,11 +47,11 @@ export default async function StudentReportsPage() {
           <Table
             head={
               <>
-                <th className="th">Device</th>
-                <th className="th">What happened</th>
-                <th className="th">Last seen</th>
-                <th className="th">Filed</th>
-                <th className="th">Status</th>
+                <th scope="col" className="th">Device</th>
+                <th scope="col" className="th">What happened</th>
+                <th scope="col" className="th">Last seen</th>
+                <th scope="col" className="th">Filed</th>
+                <th scope="col" className="th">Status</th>
               </>
             }
           >

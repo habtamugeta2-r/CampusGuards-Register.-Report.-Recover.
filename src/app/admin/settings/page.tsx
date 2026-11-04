@@ -102,7 +102,9 @@ export default async function AdminSettingsPage() {
                   <dt>Median recovery</dt>
                   <dd>{baseline.median_recovery_hours ?? '—'} h</dd>
                 </div>
-                <p className="mt-2 text-xs text-slate-500">{baseline.source}</p>
+                <div className="mt-2">
+                  <dd className="text-xs text-slate-500">{baseline.source}</dd>
+                </div>
               </dl>
             ) : (
               <p className="mt-2 text-sm text-slate-600">

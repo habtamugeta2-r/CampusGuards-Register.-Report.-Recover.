@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export default function FoundPage() {
   return (
-    <div className="mx-auto max-w-xl px-4 py-10">
+    <main className="mx-auto max-w-xl px-4 py-10">
       <div className="mb-6 flex items-center justify-center gap-2">
         <ShieldIcon className="h-7 w-7 text-brand-700" />
         <span className="text-base font-semibold">CampusGuard</span>
@@ -23,11 +23,11 @@ export default function FoundPage() {
         <FoundScanner />
       </Card>
 
-      <p className="mt-6 text-center text-xs text-slate-400">
+      <p className="mt-6 text-center text-xs text-slate-500">
         <Link href="/" className="hover:underline">
           ← Back to overview
         </Link>
       </p>
-    </div>
+    </main>
   );
 }

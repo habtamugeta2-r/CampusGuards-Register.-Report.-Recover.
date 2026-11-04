@@ -12,6 +12,18 @@ export function fail(status: number, message: string, extra: Record<string, unkn
 
 class ConflictError extends Error {}
 class NotFoundError extends Error {}
+class BodyTooLargeError extends Error {}
+
+/**
+ * Largest request body the API will read.
+ *
+ * Two reasons, both found while reviewing the dependencies: zod (still on 3.x
+ * here) can be driven to allocate unboundedly while validating an oversized
+ * constrained collection, and no CampusGuard endpoint legitimately needs to
+ * accept more than this — the biggest is an officer's offline scan batch, which
+ * is a few hundred bytes per scan. 2 MB is ~13,000 queued scans.
+ */
+export const MAX_BODY_BYTES = 2 * 1024 * 1024;
 
 /** Postgres error codes we translate into HTTP responses. */
 const UNIQUE_VIOLATION = '23505';
@@ -39,6 +51,7 @@ export function route<C = unknown>(handler: Handler<C>) {
       }
       if (error instanceof ConflictError) return fail(409, error.message);
       if (error instanceof NotFoundError) return fail(404, error.message);
+      if (error instanceof BodyTooLargeError) return fail(413, 'That request is too large.');
 
       const pg = error as { code?: string; detail?: string };
       if (pg?.code === UNIQUE_VIOLATION) return fail(409, 'That record already exists.');
@@ -59,10 +72,30 @@ export function notFound(message = 'Record not found.'): never {
   throw new NotFoundError(message);
 }
 
+/** Reads the body from the stream, refusing to buffer more than the cap. */
+async function readBody(req: Request): Promise<string> {
+  if (!req.body) return '';
+  const reader = req.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX_BODY_BYTES) {
+      await reader.cancel().catch(() => undefined);
+      throw new BodyTooLargeError('Request body exceeds the limit.');
+    }
+    chunks.push(value);
+  }
+  return new TextDecoder().decode(Buffer.concat(chunks));
+}
+
 export async function readJson(req: Request): Promise<unknown> {
   try {
-    return await req.json();
-  } catch {
+    return JSON.parse(await readBody(req));
+  } catch (error) {
+    if (error instanceof BodyTooLargeError) throw error;
     return {};
   }
 }

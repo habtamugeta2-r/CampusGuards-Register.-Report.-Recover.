@@ -376,7 +376,7 @@ export function ScanConsole({ checkpoints }: { checkpoints: Checkpoint[] }) {
               </div>
               <div>
                 <label className="label" htmlFor="carrier">
-                  Carrier’s university ID <span className="font-normal text-slate-400">(only after an ID check)</span>
+                  Carrier’s university ID <span className="font-normal text-slate-500">(only after an ID check)</span>
                 </label>
                 <input
                   id="carrier"
@@ -400,7 +400,7 @@ export function ScanConsole({ checkpoints }: { checkpoints: Checkpoint[] }) {
             </form>
 
             {error ? (
-              <div className="mt-3">
+              <div className="mt-3" role="alert">
                 <Alert tone="danger">{error}</Alert>
               </div>
             ) : null}
@@ -437,7 +437,9 @@ export function ScanConsole({ checkpoints }: { checkpoints: Checkpoint[] }) {
 
         {result ? (
           <Card className={`border-2 ${TONE_STYLES[result.tone] ?? 'border-slate-200 bg-white'}`}>
-            <div className="p-4">
+            {/* The officer is looking at a queue, not at the screen, so the
+                result is announced as it arrives rather than only displayed. */}
+            <div className="p-4" role="status" aria-live="polite" aria-atomic="true">
               <div className="flex items-start justify-between gap-2">
                 <h2 className="text-lg font-semibold text-slate-900">{result.headline}</h2>
                 <Badge tone={result.source === 'cache' ? 'warn' : 'info'}>

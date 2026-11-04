@@ -5,7 +5,7 @@ export const metadata = { title: 'Privacy notice' };
 
 export default function PrivacyPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
+    <main className="mx-auto max-w-3xl px-4 py-10">
       <PageHeader
         title="Privacy notice"
         description="What CampusGuard collects, why, how long it is kept, and who can see it. Version 2026-01-01."
@@ -108,6 +108,6 @@ export default function PrivacyPage() {
           terms of use
         </Link>
       </p>
-    </div>
+    </main>
   );
 }

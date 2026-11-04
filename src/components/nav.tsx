@@ -62,16 +62,17 @@ export function TopNav({
         <Link href={role === 'STUDENT' ? '/student' : role === 'SECURITY' ? '/security' : '/admin'} className="flex items-center gap-2">
           <ShieldIcon className="h-6 w-6 text-brand-700" />
           <span className="text-sm font-semibold tracking-tight text-slate-900">CampusGuard</span>
-          <span className="hidden text-xs text-slate-400 sm:inline">{institution}</span>
+          <span className="hidden text-xs text-slate-500 sm:inline">{institution}</span>
         </Link>
 
-        <nav className="order-3 -mx-1 flex w-full gap-1 overflow-x-auto md:order-2 md:w-auto">
+        <nav aria-label="Main" className="order-3 -mx-1 flex w-full gap-1 overflow-x-auto md:order-2 md:w-auto">
           {items.map((item) => {
             const active = pathname === item.href || (item.href !== '/student' && pathname.startsWith(item.href + '/'));
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={active ? 'page' : undefined}
                 className={clsx(
                   'whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors',
                   active ? 'bg-brand-50 text-brand-800' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',

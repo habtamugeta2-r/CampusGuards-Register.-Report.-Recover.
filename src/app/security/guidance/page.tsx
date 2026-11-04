@@ -39,7 +39,7 @@ export default function SecurityGuidancePage() {
         {PRINCIPLES.map((principle, index) => (
           <Card key={principle.title} className="card-pad">
             <h2 className="text-sm font-semibold text-slate-900">
-              <span className="mr-2 text-slate-400">{index + 1}.</span>
+              <span className="mr-2 text-slate-500">{index + 1}.</span>
               {principle.title}
             </h2>
             <p className="mt-1 text-sm text-slate-600">{principle.body}</p>

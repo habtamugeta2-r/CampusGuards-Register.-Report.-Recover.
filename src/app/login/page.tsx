@@ -13,7 +13,7 @@ export default async function LoginPage() {
   if (session) redirect(roleHome(session.role));
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10">
       <Link href="/" className="mb-6 flex items-center justify-center gap-2">
         <ShieldIcon className="h-8 w-8 text-brand-700" />
         <span className="text-lg font-semibold tracking-tight">CampusGuard</span>
@@ -43,11 +43,11 @@ export default async function LoginPage() {
         </ul>
       </div>
 
-      <p className="mt-4 text-center text-xs text-slate-400">
+      <p className="mt-4 text-center text-xs text-slate-500">
         <Link href="/" className="hover:underline">
           ← Back to overview
         </Link>
       </p>
-    </div>
+    </main>
   );
 }

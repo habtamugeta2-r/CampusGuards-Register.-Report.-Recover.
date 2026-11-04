@@ -41,14 +41,15 @@ export function ResolveReportForm({ reportId }: { reportId: string }) {
         }
       }}
     >
-      {state.error ? <Alert tone="danger">{state.error}</Alert> : null}
-      <select name="status" className="select" defaultValue="RESOLVED_RECOVERED">
+      {state.error ? <Alert tone="danger" live="assertive">{state.error}</Alert> : null}
+      <select aria-label="Outcome" name="status" className="select" defaultValue="RESOLVED_RECOVERED">
         <option value="RESOLVED_RECOVERED">Recovered — returned to owner</option>
         <option value="CLOSED_UNFOUND">Closed — not found</option>
         <option value="WITHDRAWN">Withdrawn by owner</option>
         <option value="FALSE_REPORT">False report</option>
       </select>
       <textarea
+        aria-label="Outcome notes"
         name="notes"
         rows={2}
         className="input"
@@ -99,15 +100,15 @@ export function FoundActionForm({
         }
       }}
     >
-      {state.error ? <Alert tone="danger">{state.error}</Alert> : null}
+      {state.error ? <Alert tone="danger" live="assertive">{state.error}</Alert> : null}
       {!hasMatch ? (
-        <select name="action" className="select" defaultValue="match">
+        <select aria-label="Action" name="action" className="select" defaultValue="match">
           <option value="match">Link to a missing report</option>
           <option value="return">Mark as returned / disposed</option>
         </select>
       ) : null}
       {!hasMatch ? (
-        <select name="missingReportId" className="select">
+        <select aria-label="Missing report to link" name="missingReportId" className="select">
           <option value="">Choose a report…</option>
           {missingReports.map((report) => (
             <option key={report.id} value={report.id}>
@@ -116,8 +117,8 @@ export function FoundActionForm({
           ))}
         </select>
       ) : null}
-      <input name="custodyLocation" className="input" placeholder="Collection point (e.g. Library front desk)" />
-      <textarea name="notes" rows={2} className="input" placeholder="Notes for the record" />
+      <input aria-label="Collection point" name="custodyLocation" className="input" placeholder="Collection point (e.g. Library front desk)" />
+      <textarea aria-label="Notes for the record" name="notes" rows={2} className="input" placeholder="Notes for the record" />
       <button className="btn-primary btn-sm" disabled={state.pending}>
         {state.pending ? <Spinner label="Saving…" /> : hasMatch ? 'Mark as returned' : 'Save'}
       </button>
@@ -127,11 +128,15 @@ export function FoundActionForm({
 
 export function UserRowActions({
   userId,
+  name,
   role,
   status,
   isSelf,
 }: {
   userId: string;
+  /** Used only to give the inline controls an accessible name: in a table of
+   *  fifty people, "Role" alone is not a name a screen-reader user can use. */
+  name: string;
   role: Role;
   status: UserStatus;
   isSelf: boolean;
@@ -153,11 +158,12 @@ export function UserRowActions({
     }
   }
 
-  if (isSelf) return <span className="text-xs text-slate-400">You</span>;
+  if (isSelf) return <span className="text-xs text-slate-500">You</span>;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <select
+        aria-label={`Role for ${name}`}
         className="select btn-sm w-auto py-1"
         value={role}
         disabled={pending}
@@ -168,6 +174,7 @@ export function UserRowActions({
         <option value="ADMIN">Admin</option>
       </select>
       <select
+        aria-label={`Account status for ${name}`}
         className="select btn-sm w-auto py-1"
         value={status}
         disabled={pending}
@@ -197,7 +204,7 @@ export function UserRowActions({
       >
         Delete
       </button>
-      {error ? <span className="text-xs text-red-700">{error}</span> : null}
+      {error ? <span role="alert" className="text-xs text-red-700">{error}</span> : null}
     </div>
   );
 }
@@ -302,8 +309,8 @@ export function SettingsForm({
         }
       }}
     >
-      {state.error ? <Alert tone="danger">{state.error}</Alert> : null}
-      {state.notice ? <Alert tone="ok">{state.notice}</Alert> : null}
+      {state.error ? <Alert tone="danger" live="assertive">{state.error}</Alert> : null}
+      {state.notice ? <Alert tone="ok" live="polite">{state.notice}</Alert> : null}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
@@ -406,24 +413,24 @@ export function ScanHistoryLookup() {
           }
         }}
       >
-        <input name="identifier" className="input" placeholder="Student ID or email" required />
-        <input name="justification" className="input" placeholder="Why do you need this? (recorded)" required />
+        <input aria-label="Student ID or email" name="identifier" className="input" placeholder="Student ID or email" required />
+        <input aria-label="Why do you need this?" name="justification" className="input" placeholder="Why do you need this? (recorded)" required />
         <button className="btn-primary" disabled={state.pending}>
           {state.pending ? <Spinner label="Looking up…" /> : 'Look up history'}
         </button>
       </form>
 
-      {state.error ? <Alert tone="danger">{state.error}</Alert> : null}
+      {state.error ? <Alert tone="danger" live="assertive">{state.error}</Alert> : null}
 
       {rows ? (
         <div className="overflow-x-auto rounded-lg border border-slate-200">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
               <tr>
-                <th className="th">When</th>
-                <th className="th">Checkpoint</th>
-                <th className="th">Device</th>
-                <th className="th">Result</th>
+                <th scope="col" className="th">When</th>
+                <th scope="col" className="th">Checkpoint</th>
+                <th scope="col" className="th">Device</th>
+                <th scope="col" className="th">Result</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">

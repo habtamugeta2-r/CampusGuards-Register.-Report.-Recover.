@@ -48,7 +48,7 @@ export function ProductForm({ product, onDone }: { product?: Record<string, unkn
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      {state.error ? <Alert tone="danger">{state.error}</Alert> : null}
+      {state.error ? <Alert tone="danger" live="assertive">{state.error}</Alert> : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="label" htmlFor="type">
@@ -76,19 +76,19 @@ export function ProductForm({ product, onDone }: { product?: Record<string, unkn
         </div>
         <div>
           <label className="label" htmlFor="serialNumber">
-            Serial number <span className="font-normal text-slate-400">(optional, but it helps)</span>
+            Serial number <span className="font-normal text-slate-500">(optional, but it helps)</span>
           </label>
           <input id="serialNumber" name="serialNumber" className="input" defaultValue={(product?.serialNumber as string) ?? ''} />
         </div>
         <div>
           <label className="label" htmlFor="color">
-            Colour <span className="font-normal text-slate-400">(optional)</span>
+            Colour <span className="font-normal text-slate-500">(optional)</span>
           </label>
           <input id="color" name="color" className="input" defaultValue={(product?.color as string) ?? ''} />
         </div>
         <div>
           <label className="label" htmlFor="distinguishingMarks">
-            Distinguishing marks <span className="font-normal text-slate-400">(scratches, stickers)</span>
+            Distinguishing marks <span className="font-normal text-slate-500">(scratches, stickers)</span>
           </label>
           <input
             id="distinguishingMarks"
@@ -99,7 +99,7 @@ export function ProductForm({ product, onDone }: { product?: Record<string, unkn
         </div>
         <div className="sm:col-span-2">
           <label className="label" htmlFor="notes">
-            Notes <span className="font-normal text-slate-400">(optional, private to you and the lost-property desk)</span>
+            Notes <span className="font-normal text-slate-500">(optional, private to you and the lost-property desk)</span>
           </label>
           <input id="notes" name="notes" className="input" defaultValue={(product?.notes as string) ?? ''} />
         </div>
@@ -161,7 +161,7 @@ export function MissingReportForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      {state.error ? <Alert tone="danger">{state.error}</Alert> : null}
+      {state.error ? <Alert tone="danger" live="assertive">{state.error}</Alert> : null}
       <div>
         <label className="label" htmlFor="productId">
           Which device?
@@ -195,14 +195,14 @@ export function MissingReportForm({
         </div>
         <div>
           <label className="label" htmlFor="occurredAt">
-            When was that? <span className="font-normal text-slate-400">(optional)</span>
+            When was that? <span className="font-normal text-slate-500">(optional)</span>
           </label>
           <input id="occurredAt" name="occurredAt" type="datetime-local" className="input" />
         </div>
       </div>
       <div>
         <label className="label" htmlFor="description">
-          Anything else? <span className="font-normal text-slate-400">(optional)</span>
+          Anything else? <span className="font-normal text-slate-500">(optional)</span>
         </label>
         <textarea id="description" name="description" rows={3} className="input" />
       </div>
@@ -241,8 +241,8 @@ export function BorrowForm({ productId, productLabel }: { productId: string; pro
 
   return (
     <form onSubmit={onSubmit} className="space-y-3">
-      {state.error ? <Alert tone="danger">{state.error}</Alert> : null}
-      {state.notice ? <Alert tone="ok">{state.notice}</Alert> : null}
+      {state.error ? <Alert tone="danger" live="assertive">{state.error}</Alert> : null}
+      {state.notice ? <Alert tone="ok" live="polite">{state.notice}</Alert> : null}
       <p className="text-sm text-slate-600">
         Authorise someone to carry your {productLabel}. If an officer scans it while the authorisation is valid, they will
         see the borrower is authorised instead of an alert.
@@ -262,7 +262,7 @@ export function BorrowForm({ productId, productLabel }: { productId: string; pro
         </div>
         <div className="sm:col-span-2">
           <label className="label" htmlFor="reason">
-            Reason <span className="font-normal text-slate-400">(optional)</span>
+            Reason <span className="font-normal text-slate-500">(optional)</span>
           </label>
           <input id="reason" name="reason" className="input" placeholder="Group project presentation" />
         </div>
@@ -350,7 +350,7 @@ export function RotateQrButton({ productId }: { productId: string }) {
       >
         {pending ? 'Issuing…' : 'Issue replacement label'}
       </button>
-      {error ? <p className="mt-1 text-xs text-red-700">{error}</p> : null}
+      {error ? <p role="alert" className="mt-1 text-xs text-red-700">{error}</p> : null}
     </div>
   );
 }
@@ -377,11 +377,17 @@ export function ChangePasswordForm() {
         }
       }}
     >
-      {state.error ? <Alert tone="danger">{state.error}</Alert> : null}
-      {state.notice ? <Alert tone="ok">{state.notice}</Alert> : null}
+      {state.error ? <Alert tone="danger" live="assertive">{state.error}</Alert> : null}
+      {state.notice ? <Alert tone="ok" live="polite">{state.notice}</Alert> : null}
       <div className="grid gap-3 sm:grid-cols-2">
-        <input name="currentPassword" type="password" required className="input" placeholder="Current password" />
-        <input name="newPassword" type="password" required minLength={10} className="input" placeholder="New password (10+ characters)" />
+        <div>
+          <label className="label" htmlFor="currentPassword">Current password</label>
+          <input id="currentPassword" name="currentPassword" type="password" required autoComplete="current-password" className="input" />
+        </div>
+        <div>
+          <label className="label" htmlFor="newPassword">New password</label>
+          <input id="newPassword" name="newPassword" type="password" required minLength={10} autoComplete="new-password" className="input" placeholder="10+ characters" />
+        </div>
       </div>
       <button className="btn-secondary btn-sm" disabled={state.pending}>
         {state.pending ? <Spinner label="Updating…" /> : 'Change password'}
@@ -417,16 +423,16 @@ export function DataRequestForm() {
         }
       }}
     >
-      {state.error ? <Alert tone="danger">{state.error}</Alert> : null}
-      {state.notice ? <Alert tone="ok">{state.notice}</Alert> : null}
-      <select name="kind" className="select" defaultValue="ACCESS">
+      {state.error ? <Alert tone="danger" live="assertive">{state.error}</Alert> : null}
+      {state.notice ? <Alert tone="ok" live="polite">{state.notice}</Alert> : null}
+      <select aria-label="Type of request" name="kind" className="select" defaultValue="ACCESS">
         {kinds.map(([value, label]) => (
           <option key={value} value={value}>
             {label}
           </option>
         ))}
       </select>
-      <textarea name="details" rows={2} className="input" placeholder="Any details that will help us handle this" />
+      <textarea aria-label="Details" name="details" rows={2} className="input" placeholder="Any details that will help us handle this" />
       <button className="btn-secondary btn-sm" disabled={state.pending}>
         {state.pending ? <Spinner label="Submitting…" /> : 'Submit request'}
       </button>

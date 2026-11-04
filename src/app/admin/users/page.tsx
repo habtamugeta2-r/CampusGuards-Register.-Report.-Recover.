@@ -39,8 +39,8 @@ export default async function AdminUsersPage({
       />
 
       <form className="mb-4 flex flex-wrap gap-2" method="get">
-        <input name="q" defaultValue={q ?? ''} className="input max-w-sm" placeholder="Search name, email or student ID" />
-        <select name="role" className="select w-auto" defaultValue={role ?? 'ALL'}>
+        <input aria-label="Search name, email or student ID" name="q" defaultValue={q ?? ''} className="input max-w-sm" placeholder="Search name, email or student ID" />
+        <select aria-label="Filter by role" name="role" className="select w-auto" defaultValue={role ?? 'ALL'}>
           <option value="ALL">All roles</option>
           <option value="STUDENT">Students</option>
           <option value="SECURITY">Security officers</option>
@@ -56,12 +56,12 @@ export default async function AdminUsersPage({
           <Table
             head={
               <>
-                <th className="th">Name</th>
-                <th className="th">University ID</th>
-                <th className="th">Devices</th>
-                <th className="th">Joined</th>
-                <th className="th">Status</th>
-                <th className="th">Role & actions</th>
+                <th scope="col" className="th">Name</th>
+                <th scope="col" className="th">University ID</th>
+                <th scope="col" className="th">Devices</th>
+                <th scope="col" className="th">Joined</th>
+                <th scope="col" className="th">Status</th>
+                <th scope="col" className="th">Role & actions</th>
               </>
             }
           >
@@ -81,6 +81,7 @@ export default async function AdminUsersPage({
                   <div className="mb-1 text-xs text-slate-500">{ROLE_LABEL[user.role]}</div>
                   <UserRowActions
                     userId={user.id}
+                    name={user.full_name}
                     role={user.role}
                     status={user.status}
                     isSelf={user.id === session.user.id}

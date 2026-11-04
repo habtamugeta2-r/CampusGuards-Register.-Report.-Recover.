@@ -159,13 +159,13 @@ export function RegisterForm() {
         </div>
         <div>
           <label className="label" htmlFor="department">
-            Department <span className="font-normal text-slate-400">(optional)</span>
+            Department <span className="font-normal text-slate-500">(optional)</span>
           </label>
           <input id="department" name="department" className="input" />
         </div>
         <div>
           <label className="label" htmlFor="phone">
-            Phone <span className="font-normal text-slate-400">(optional — used only to contact you about a found device)</span>
+            Phone <span className="font-normal text-slate-500">(optional — used only to contact you about a found device)</span>
           </label>
           <input id="phone" name="phone" className="input" autoComplete="tel" />
         </div>

@@ -31,7 +31,7 @@ export default async function HomePage() {
   const session = await getUser();
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
+    <main className="mx-auto max-w-5xl px-4 py-10">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ShieldIcon className="h-7 w-7 text-brand-700" />
@@ -154,6 +154,6 @@ export default async function HomePage() {
           </Link>
         </p>
       </footer>
-    </div>
+    </main>
   );
 }

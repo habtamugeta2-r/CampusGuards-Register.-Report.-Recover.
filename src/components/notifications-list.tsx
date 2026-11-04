@@ -51,7 +51,7 @@ export function NotificationList({ rows }: { rows: NotificationRow[] }) {
               </div>
               <p className="mt-1 text-sm text-slate-700">{row.body}</p>
               <div className="mt-2 flex items-center gap-3">
-                <span className="text-xs text-slate-400">{formatRelative(row.created_at)}</span>
+                <span className="text-xs text-slate-500">{formatRelative(row.created_at)}</span>
                 {row.link ? (
                   <Link href={row.link} className="text-xs font-medium text-brand-700 hover:underline">
                     Open

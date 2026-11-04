@@ -40,9 +40,9 @@ export default async function StudentPrivacyPage() {
             <Table
               head={
                 <>
-                  <th className="th">What</th>
-                  <th className="th">Details</th>
-                  <th className="th">Kept for</th>
+                  <th scope="col" className="th">What</th>
+                  <th scope="col" className="th">Details</th>
+                  <th scope="col" className="th">Kept for</th>
                 </>
               }
             >
@@ -89,9 +89,9 @@ export default async function StudentPrivacyPage() {
                 <Table
                   head={
                     <>
-                      <th className="th">Request</th>
-                      <th className="th">Status</th>
-                      <th className="th">Filed</th>
+                      <th scope="col" className="th">Request</th>
+                      <th scope="col" className="th">Status</th>
+                      <th scope="col" className="th">Filed</th>
                     </>
                   }
                 >

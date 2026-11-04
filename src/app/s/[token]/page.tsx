@@ -23,7 +23,7 @@ export default async function PublicStatusPage({ params }: { params: Promise<{ t
 
   if (!product) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-12">
+      <main className="mx-auto max-w-lg px-4 py-12">
         <div className="mb-6 flex items-center justify-center gap-2">
           <ShieldIcon className="h-7 w-7 text-brand-700" />
           <span className="text-base font-semibold">CampusGuard</span>
@@ -42,14 +42,14 @@ export default async function PublicStatusPage({ params }: { params: Promise<{ t
             .
           </p>
         </Card>
-      </div>
+      </main>
     );
   }
 
   const reportedMissing = product.status === 'REPORTED_MISSING';
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-12">
+    <main className="mx-auto max-w-lg px-4 py-12">
       <div className="mb-6 flex items-center justify-center gap-2">
         <ShieldIcon className="h-7 w-7 text-brand-700" />
         <span className="text-base font-semibold">CampusGuard</span>
@@ -100,11 +100,11 @@ export default async function PublicStatusPage({ params }: { params: Promise<{ t
         </div>
       </Card>
 
-      <p className="mt-6 text-center text-xs text-slate-400">
+      <p className="mt-6 text-center text-xs text-slate-500">
         <Link href="/" className="hover:underline">
           What is CampusGuard?
         </Link>
       </p>
-    </div>
+    </main>
   );
 }

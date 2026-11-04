@@ -49,11 +49,11 @@ export default async function ProductsPage() {
           <Table
             head={
               <>
-                <th className="th">Device</th>
-                <th className="th">Type</th>
-                <th className="th">Status</th>
-                <th className="th">Registered</th>
-                <th className="th">Label</th>
+                <th scope="col" className="th">Device</th>
+                <th scope="col" className="th">Type</th>
+                <th scope="col" className="th">Status</th>
+                <th scope="col" className="th">Registered</th>
+                <th scope="col" className="th">Label</th>
               </>
             }
           >
@@ -97,14 +97,14 @@ export default async function ProductsPage() {
               Kept for the audit trail, but their codes no longer resolve at a checkpoint.
             </p>
           </div>
-          <Table head={<th className="th">Device</th>}>
+          <Table head={<th scope="col" className="th">Device</th>}>
             {retired.map((product) => (
               <tr key={product.id}>
                 <td className="td">
                   <span className="text-slate-500 line-through">
                     {product.brand} {product.model}
                   </span>
-                  <span className="ml-2 text-xs text-slate-400">{product.retired_reason ?? 'Removed'}</span>
+                  <span className="ml-2 text-xs text-slate-500">{product.retired_reason ?? 'Removed'}</span>
                 </td>
               </tr>
             ))}

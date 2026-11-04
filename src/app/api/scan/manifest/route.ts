@@ -19,7 +19,13 @@ export const dynamic = 'force-dynamic';
 export const GET = route(async () => {
   const session = await requireRole('SECURITY', 'ADMIN');
 
-  const rows = await offlineManifest(session.institution.id, OFFLINE_CACHE_MAX_ROWS);
+  // Fetch one row past the cap so `truncated` reports what it claims: that the
+  // registry is larger than the cache and some devices are NOT on the phone.
+  // Comparing `rows.length >= cap` reported "truncated" when the registry
+  // happened to be exactly the cap size, which is not truncation at all.
+  const rows = await offlineManifest(session.institution.id, OFFLINE_CACHE_MAX_ROWS + 1);
+  const truncated = rows.length > OFFLINE_CACHE_MAX_ROWS;
+  if (truncated) rows.length = OFFLINE_CACHE_MAX_ROWS;
 
   await logAudit({
     institutionId: session.institution.id,
@@ -36,7 +42,7 @@ export const GET = route(async () => {
     expiresAt: new Date(Date.now() + OFFLINE_CACHE_TTL_HOURS * 3_600_000).toISOString(),
     institution: session.institution.code,
     count: rows.length,
-    truncated: rows.length >= OFFLINE_CACHE_MAX_ROWS,
+    truncated,
     rows,
   });
 });

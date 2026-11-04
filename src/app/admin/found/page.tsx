@@ -48,12 +48,12 @@ export default async function AdminFoundPage() {
           <Table
             head={
               <>
-                <th className="th">Device</th>
-                <th className="th">Owner on file</th>
-                <th className="th">Where it was found</th>
-                <th className="th">Handed in</th>
-                <th className="th">Status</th>
-                <th className="th">Action</th>
+                <th scope="col" className="th">Device</th>
+                <th scope="col" className="th">Owner on file</th>
+                <th scope="col" className="th">Where it was found</th>
+                <th scope="col" className="th">Handed in</th>
+                <th scope="col" className="th">Status</th>
+                <th scope="col" className="th">Action</th>
               </>
             }
           >
@@ -70,7 +70,7 @@ export default async function AdminFoundPage() {
                       <p className="text-xs text-slate-500">{report.owner_student_id ?? report.owner_email}</p>
                     </>
                   ) : (
-                    <span className="text-xs text-slate-400">No label — cannot identify owner</span>
+                    <span className="text-xs text-slate-500">No label — cannot identify owner</span>
                   )}
                 </td>
                 <td className="td">{report.location ?? '—'}</td>
@@ -83,7 +83,7 @@ export default async function AdminFoundPage() {
                 </td>
                 <td className="td">
                   {report.status === 'RETURNED' || report.status === 'DISPOSED' ? (
-                    <span className="text-xs text-slate-400">Done</span>
+                    <span className="text-xs text-slate-500">Done</span>
                   ) : (
                     <FoundActionForm
                       foundId={report.id}

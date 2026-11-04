@@ -6,7 +6,7 @@ export const metadata = { title: 'Offline' };
 
 export default function OfflinePage() {
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-6 text-center">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-6 text-center">
       <ShieldIcon className="h-10 w-10 text-slate-400" />
       <h1 className="mt-4 text-lg font-semibold text-slate-900">You are offline</h1>
       <p className="mt-2 text-sm text-slate-600">
@@ -20,6 +20,6 @@ export default function OfflinePage() {
         </Link>
         <ReloadButton />
       </div>
-    </div>
+    </main>
   );
 }

@@ -13,7 +13,7 @@ export default async function RegisterPage() {
   if (session) redirect(roleHome(session.role));
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-4 py-10">
+    <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-4 py-10">
       <Link href="/" className="mb-6 flex items-center justify-center gap-2">
         <ShieldIcon className="h-8 w-8 text-brand-700" />
         <span className="text-lg font-semibold tracking-tight">CampusGuard</span>
@@ -27,7 +27,7 @@ export default async function RegisterPage() {
         <RegisterForm />
       </Card>
 
-      <p className="mt-4 text-center text-xs text-slate-400">
+      <p className="mt-4 text-center text-xs text-slate-500">
         Read the{' '}
         <Link href="/legal/privacy" className="hover:underline">
           privacy notice
@@ -38,6 +38,6 @@ export default async function RegisterPage() {
         </Link>
         .
       </p>
-    </div>
+    </main>
   );
 }

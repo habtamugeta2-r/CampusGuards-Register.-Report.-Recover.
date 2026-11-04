@@ -73,13 +73,13 @@ export default async function AdminReportsPage({
           <Table
             head={
               <>
-                <th className="th">Device</th>
-                <th className="th">Owner</th>
-                <th className="th">What happened</th>
-                <th className="th">Last seen</th>
-                <th className="th">Filed</th>
-                <th className="th">Status</th>
-                <th className="th">Action</th>
+                <th scope="col" className="th">Device</th>
+                <th scope="col" className="th">Owner</th>
+                <th scope="col" className="th">What happened</th>
+                <th scope="col" className="th">Last seen</th>
+                <th scope="col" className="th">Filed</th>
+                <th scope="col" className="th">Status</th>
+                <th scope="col" className="th">Action</th>
               </>
             }
           >
@@ -114,7 +114,7 @@ export default async function AdminReportsPage({
                   ) : null}
                 </td>
                 <td className="td">
-                  {report.status === 'OPEN' ? <ResolveReportForm reportId={report.id} /> : <span className="text-xs text-slate-400">Closed</span>}
+                  {report.status === 'OPEN' ? <ResolveReportForm reportId={report.id} /> : <span className="text-xs text-slate-500">Closed</span>}
                 </td>
               </tr>
             ))}

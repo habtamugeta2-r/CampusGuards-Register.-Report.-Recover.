@@ -104,3 +104,8 @@ If the *purpose* changes materially, publish a new version and re-consent.
 - `retention_runs` — proof that deletion ran, with counts
 - `data_subject_requests` — requests, handling and outcomes
 - `baseline_metrics` — the pre-pilot comparison, with its source named
+
+---
+
+Related: [`security-review.md`](security-review.md) is the technical self-assessment that backs the
+security measures described here — including the findings that are still open.

@@ -18,11 +18,14 @@ export const POST = route(async (req: Request) => {
   const session = await requireRole('SECURITY', 'ADMIN');
   const body = scanSchema.parse(await readJson(req));
 
-  let checkpointName: string | null = null;
-  if (body.checkpointId) {
-    const checkpoint = await findCheckpointById(body.checkpointId, session.institution.id);
-    checkpointName = checkpoint?.name ?? null;
-  }
+  // Resolve the checkpoint against the officer's own institution and use what
+  // we resolved — never the raw id. An unknown or retired checkpoint (a stale
+  // id cached on a phone that has been offline for days) used to be passed
+  // straight through and blew up on the foreign key, losing the scan. Now the
+  // scan is still recorded, with the checkpoint simply left blank.
+  const checkpoint = body.checkpointId
+    ? await findCheckpointById(body.checkpointId, session.institution.id)
+    : null;
 
   try {
     const result = await verifyAndRecord({
@@ -31,8 +34,8 @@ export const POST = route(async (req: Request) => {
       officerId: session.user.id,
       officerName: session.user.full_name,
       rawToken: body.token,
-      checkpointId: body.checkpointId || null,
-      checkpointName,
+      checkpointId: checkpoint?.id ?? null,
+      checkpointName: checkpoint?.name ?? null,
       carrierIdentifier: body.carrierIdentifier || null,
       carrierIdShown: Boolean(body.carrierIdShown),
       note: body.note || null,

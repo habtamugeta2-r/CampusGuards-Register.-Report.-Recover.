@@ -40,8 +40,8 @@ export default async function AdminAuditPage({
       />
 
       <form className="mb-4 flex flex-wrap gap-2" method="get">
-        <input name="action" defaultValue={action ?? ''} className="input max-w-xs" placeholder="Filter by action (e.g. scan.verify)" />
-        <input name="entityId" defaultValue={entityId ?? ''} className="input max-w-xs" placeholder="Filter by record ID" />
+        <input aria-label="Filter by action" name="action" defaultValue={action ?? ''} className="input max-w-xs" placeholder="Filter by action (e.g. scan.verify)" />
+        <input aria-label="Filter by record ID" name="entityId" defaultValue={entityId ?? ''} className="input max-w-xs" placeholder="Filter by record ID" />
         <button className="btn-secondary">Filter</button>
       </form>
 
@@ -52,11 +52,11 @@ export default async function AdminAuditPage({
           <Table
             head={
               <>
-                <th className="th">When</th>
-                <th className="th">Action</th>
-                <th className="th">Actor</th>
-                <th className="th">Record</th>
-                <th className="th">Justification</th>
+                <th scope="col" className="th">When</th>
+                <th scope="col" className="th">Action</th>
+                <th scope="col" className="th">Actor</th>
+                <th scope="col" className="th">Record</th>
+                <th scope="col" className="th">Justification</th>
               </>
             }
           >

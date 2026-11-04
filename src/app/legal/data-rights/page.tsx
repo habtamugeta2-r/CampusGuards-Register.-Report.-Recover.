@@ -28,7 +28,7 @@ const RIGHTS = [
 
 export default function DataRightsPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
+    <main className="mx-auto max-w-3xl px-4 py-10">
       <PageHeader
         title="Your data rights"
         description="Rights you have under Ethiopia’s Personal Data Protection Proclamation No. 1321/2024, and how to exercise them in CampusGuard."
@@ -61,6 +61,6 @@ export default function DataRightsPage() {
           Privacy notice
         </Link>
       </p>
-    </div>
+    </main>
   );
 }

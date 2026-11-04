@@ -33,7 +33,7 @@ university.
 | Governance controls | ✅ | Retention windows, justification-gated scan history, audit log |
 | Data-subject rights | ✅ | JSON export, correction/deletion/objection requests, consent records |
 | PWA (installable, offline shell) | ✅ | Service worker + manifest; authenticated API is never cached |
-| Automated tests | ✅ | 17 unit tests, 34 smoke checks, 25 end-to-end workflow checks |
+| Automated tests | ✅ | 17 unit tests, 34 smoke checks, 29 end-to-end workflow checks, load test at 20k devices |
 | Production deployment tooling | ⚠️ | Documented + Dockerfile/compose; not yet run against a live Ethiopian host |
 | Multi-institution tenancy | ⚠️ | Data model is tenant-scoped; admin UI assumes one institution |
 
@@ -95,8 +95,20 @@ npm test                                # unit tests (verification rules, tokens
 npm run dev                             # in one terminal …
 npm run smoke                           # … 34 page/API checks as each role
 npm run flow-test                       # 25 end-to-end workflow checks through the HTTP API
-npm run retention                       # dry-run the retention/deletion job
+npm run retention                       # apply each institution's retention windows (deletes)
+npm run load-test                       # 20k-device load test: manifest + verify latency
+npm run a11y                            # axe-core over 28 pages as each role
+npm run backup                          # encrypted dump, verified by restoring it
 ```
+
+`npm run load-test` creates a throwaway institution with 20,000 devices, 5,000 students and 20,000
+scan events, then measures the two endpoints that decide whether the product works at a gate: the
+offline registry manifest (3.1 MB, ~130 ms p95) and a live scan (~57 ms p95). It deletes everything
+afterwards.
+
+`npm run a11y` runs axe-core against every page as each role and fails on any violation. It is a
+floor, not a certificate: `docs/03-operations/accessibility.md` records what it cannot see (contrast
+needs a layout engine) and what has not been tested at all (screen readers, low-end devices).
 
 `npm run flow-test` walks the entire product story through the public API: register → label →
 report missing → a member of the public finds and scans it → an officer scans it at a checkpoint →
@@ -144,6 +156,12 @@ Key design decisions, each with a written rationale, are in
    nothing about the owner (ADR-0005).
 5. **The offline cache is encrypted with a non-extractable key** — a lost phone must not become a
    data breach (ADR-0006).
+
+Security and privacy are self-assessed in
+[`docs/03-operations/security-review.md`](docs/03-operations/security-review.md): what is
+protected, from whom, which controls exist, and twelve findings — three fixed, nine still open.
+It is explicitly **not** an independent review, and item 2.23 of the implementation to-do keeps
+that requirement open.
 
 ---
 

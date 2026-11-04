@@ -72,7 +72,7 @@ export default async function AdminScansPage({
       </Card>
 
       <form className="mb-4 flex flex-wrap gap-2" method="get">
-        <select name="result" className="select w-auto" defaultValue={result ?? 'ALL'}>
+        <select aria-label="Filter by result" name="result" className="select w-auto" defaultValue={result ?? 'ALL'}>
           <option value="ALL">All results</option>
           {Object.keys(SCAN_RESULT_META).map((key) => (
             <option key={key} value={key}>
@@ -80,7 +80,7 @@ export default async function AdminScansPage({
             </option>
           ))}
         </select>
-        <select name="checkpoint" className="select w-auto" defaultValue={checkpoint ?? 'ALL'}>
+        <select aria-label="Filter by checkpoint" name="checkpoint" className="select w-auto" defaultValue={checkpoint ?? 'ALL'}>
           <option value="ALL">All checkpoints</option>
           {checkpoints.map((cp) => (
             <option key={cp.id} value={cp.id}>
@@ -98,12 +98,12 @@ export default async function AdminScansPage({
           <Table
             head={
               <>
-                <th className="th">When</th>
-                <th className="th">Result</th>
-                <th className="th">Device</th>
-                <th className="th">Checkpoint</th>
-                <th className="th">Officer</th>
-                <th className="th">Source</th>
+                <th scope="col" className="th">When</th>
+                <th scope="col" className="th">Result</th>
+                <th scope="col" className="th">Device</th>
+                <th scope="col" className="th">Checkpoint</th>
+                <th scope="col" className="th">Officer</th>
+                <th scope="col" className="th">Source</th>
               </>
             }
           >

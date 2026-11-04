@@ -38,8 +38,8 @@ export default async function AdminProductsPage({
       />
 
       <form className="mb-4 flex flex-wrap gap-2" method="get">
-        <input name="q" defaultValue={q ?? ''} className="input max-w-sm" placeholder="Search device, owner or code" />
-        <select name="status" className="select w-auto" defaultValue={status ?? 'ALL'}>
+        <input aria-label="Search device, owner or code" name="q" defaultValue={q ?? ''} className="input max-w-sm" placeholder="Search device, owner or code" />
+        <select aria-label="Filter by status" name="status" className="select w-auto" defaultValue={status ?? 'ALL'}>
           <option value="ALL">All statuses</option>
           <option value="ACTIVE">Active</option>
           <option value="REPORTED_MISSING">Reported missing</option>
@@ -56,12 +56,12 @@ export default async function AdminProductsPage({
           <Table
             head={
               <>
-                <th className="th">Device</th>
-                <th className="th">Owner</th>
-                <th className="th">Serial</th>
-                <th className="th">QR token</th>
-                <th className="th">Registered</th>
-                <th className="th">Status</th>
+                <th scope="col" className="th">Device</th>
+                <th scope="col" className="th">Owner</th>
+                <th scope="col" className="th">Serial</th>
+                <th scope="col" className="th">QR token</th>
+                <th scope="col" className="th">Registered</th>
+                <th scope="col" className="th">Status</th>
               </>
             }
           >

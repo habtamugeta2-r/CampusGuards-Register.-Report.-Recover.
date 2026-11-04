@@ -119,7 +119,7 @@ export default async function StudentDashboard() {
                 <li key={notification.id} className="px-4 py-3">
                   <p className="text-sm font-medium text-slate-900">{notification.title}</p>
                   <p className="mt-0.5 text-xs text-slate-600">{notification.body}</p>
-                  <p className="mt-1 text-[11px] text-slate-400">{formatRelative(notification.created_at)}</p>
+                  <p className="mt-1 text-[11px] text-slate-500">{formatRelative(notification.created_at)}</p>
                 </li>
               ))}
             </ul>

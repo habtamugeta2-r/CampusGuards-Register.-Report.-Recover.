@@ -77,12 +77,12 @@ questions have real answers.
 | --- | --- | --- |
 | 2.18 | Unit tests for the verification rule engine | ✅ 17 tests |
 | 2.19 | Page/API smoke test as each role | ✅ 34 checks |
-| 2.20 | End-to-end workflow test through the HTTP API | ✅ 25 checks |
+| 2.20 | End-to-end workflow test through the HTTP API | ✅ 29 checks |
 | 2.21 | Typecheck in CI | ✅ `npm run typecheck` |
 | 2.22 | Security headers and CSP | ✅ (framing relaxed only for the hosted preview) |
-| 2.23 | Independent security review | ⬜ **do before any real student data** |
-| 2.24 | Load test the manifest endpoint at pilot scale (20k rows) | ⬜ |
-| 2.25 | Accessibility audit (WCAG 2.1 AA) | ⬜ |
+| 2.23 | Independent security review | 🟡 self-assessment written: [`docs/03-operations/security-review.md`](../03-operations/security-review.md) — 12 findings, 3 fixed. **Independent review still required before any real student data** |
+| 2.24 | Load test the manifest endpoint at pilot scale (20k rows) | ✅ `npm run load-test` — 20k rows in 3.1 MB, 131 ms p95; verify 57 ms p95 |
+| 2.25 | Accessibility audit (WCAG 2.1 AA) | 🟡 automated pass (`npm run a11y`, 0 violations on 28 pages) + contrast review; **screen-reader and low-end-device testing still required** — [`docs/03-operations/accessibility.md`](../03-operations/accessibility.md) |
 | 2.26 | Production build (`npm run build`) | ✅ green |
 
 ---
@@ -109,9 +109,9 @@ questions have real answers.
 | --- | --- | --- |
 | 4.1 | Deployment documented for an in-Ethiopia host | ✅ `docs/03-operations/deployment.md` |
 | 4.2 | Dockerfile + compose for app and PostgreSQL | ✅ `Dockerfile`, `docker-compose.yml` |
-| 4.3 | Automated encrypted backups with a restore drill | ⬜ |
+| 4.3 | Automated encrypted backups with a restore drill | ✅ `scripts/backup.sh` encrypts before writing and verifies every backup by restoring it |
 | 4.4 | Nightly retention job scheduled (systemd timer / cron) | ✅ job exists; scheduling documented |
-| 4.5 | Uptime and error monitoring | ⬜ |
+| 4.5 | Uptime and error monitoring | ✅ `GET /api/health` (liveness) + `?deep=1` (retention staleness, pending data-subject requests, failed-login spikes); alert thresholds in `deployment.md` §7 |
 | 4.6 | ECA controller/processor registration | ⬜ legal task |
 | 4.7 | DPIA completed and signed | ⬜ |
 | 4.8 | Incident response rehearsal (breach within 72 h) | ⬜ |

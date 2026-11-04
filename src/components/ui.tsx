@@ -84,13 +84,24 @@ export function Alert({
   tone = 'info',
   title,
   children,
+  live,
 }: {
   tone?: Tone;
   title?: ReactNode;
   children?: ReactNode;
+  /**
+   * Set on alerts that appear in response to something the user just did
+   * (a failed save, a successful report). It turns the alert into a live region
+   * so the message is announced instead of only appearing. Static, always-on
+   * page warnings must NOT set this — they would be announced on every load.
+   */
+  live?: 'polite' | 'assertive';
 }) {
   return (
-    <div className={clsx('rounded-lg border px-3 py-2 text-sm', tone === 'danger' ? 'border-red-200 bg-red-50 text-red-900'
+    <div
+      role={live === 'assertive' ? 'alert' : live === 'polite' ? 'status' : undefined}
+      aria-live={live}
+      className={clsx('rounded-lg border px-3 py-2 text-sm', tone === 'danger' ? 'border-red-200 bg-red-50 text-red-900'
       : tone === 'warn' ? 'border-amber-200 bg-amber-50 text-amber-900'
       : tone === 'ok' ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
       : 'border-sky-200 bg-sky-50 text-sky-900')}>

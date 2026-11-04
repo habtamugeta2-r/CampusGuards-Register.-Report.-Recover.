@@ -30,7 +30,7 @@
   }
   .input {
     @apply block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
-           placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500
+           placeholder:text-slate-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500
            disabled:bg-slate-100 disabled:text-slate-500;
   }
   .select {
@@ -72,5 +72,19 @@
   }
   body {
     background: #fff;
+  }
+}
+
+/* Respect the OS "reduce motion" setting. The spinner in particular spins
+   forever, and a permanently animating element next to the text a user is
+   trying to read is a real barrier for people with vestibular disorders. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
