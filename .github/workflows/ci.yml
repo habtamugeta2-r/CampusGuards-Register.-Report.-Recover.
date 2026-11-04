@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: campusguard
+          POSTGRES_PASSWORD: campusguard_dev_pw
+          POSTGRES_DB: campusguard
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://campusguard:campusguard_dev_pw@127.0.0.1:5432/campusguard?schema=public
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Migrate
+        run: npm run db:migrate
+
+      - name: Seed
+        run: npm run db:seed
+
+      - name: Build
+        run: npm run build
+
+      - name: Start server
+        run: npm run start &
+
+      - name: Wait for the server
+        run: |
+          for i in $(seq 1 40); do
+            curl -fsS http://127.0.0.1:3000/api/health && exit 0
+            sleep 2
+          done
+          echo "server did not come up" && exit 1
+
+      - name: Smoke test
+        run: npm run smoke
+
+      - name: Workflow test
+        run: npm run flow-test
