@@ -145,7 +145,9 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
               qrDataUrl={qrDataUrl}
               device={`${product.brand} ${product.model}`}
               owner={session.user.full_name}
-              institution={session.institution.code}
+              institution={session.institution.name}
+              institutionLogoUrl={session.institution.logo_url}
+              brandColour={session.institution.brand_primary}
               publicUrl={publicScanUrl(primaryToken, process.env.NEXT_PUBLIC_APP_URL)}
             />
           ) : (

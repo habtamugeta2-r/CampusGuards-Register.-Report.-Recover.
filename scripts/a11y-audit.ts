@@ -35,7 +35,14 @@ const ROUTES: Record<string, string[]> = {
     '/student/privacy',
   ],
   'officer@aastu.edu.et': ['/security', '/security/history', '/security/guidance'],
-  'ops@campusguard.et': ['/platform', '/platform/organisations', '/platform/requests', '/platform/audit'],
+  'ops@campusguard.et': [
+    '/platform',
+    '/platform/country',
+    '/platform/organisations',
+    '/platform/requests',
+    '/platform/audit',
+  ],
+  'ministry@campusguard.et': ['/platform/country'],
   'admin@aastu.edu.et': [
     '/admin',
     '/admin/reports',

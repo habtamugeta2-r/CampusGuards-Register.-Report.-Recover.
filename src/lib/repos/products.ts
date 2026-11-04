@@ -30,6 +30,49 @@ const PRODUCT_SELECT = `
   LEFT JOIN student_profiles sp ON sp.user_id = u.id
 `;
 
+/**
+ * The public status page's lookup: the device, plus only the tenant fields that
+ * page is allowed to show — its name, logo and colour.
+ *
+ * It deliberately does not select the owner's name, email or student ID. This
+ * page is opened by anyone with a camera, and while the rendered HTML reveals
+ * nothing, the row itself is serialised into development-mode tooling and into
+ * anything a future change decides to pass to a client component. A query that
+ * cannot return owner identity cannot leak it, which is a much stronger
+ * guarantee than a component that happens not to render it.
+ */
+export type PublicProductRow = Product & {
+  token: string | null;
+  active_missing_report_id: string | null;
+  institution_name: string;
+  institution_logo_url: string | null;
+  institution_brand_primary: string | null;
+};
+
+export async function findPublicProductByToken(token: string): Promise<PublicProductRow | null> {
+  return queryOne<PublicProductRow>(
+    `SELECT p.*,
+            pi.value    AS token,
+            i.name      AS institution_name,
+            i.logo_url  AS institution_logo_url,
+            i.brand_primary AS institution_brand_primary,
+            (SELECT mr.id FROM missing_reports mr
+              WHERE mr.product_id = p.id AND mr.status = 'OPEN'
+              ORDER BY mr.reported_at DESC LIMIT 1) AS active_missing_report_id
+       FROM product_identifiers pi
+       JOIN products p      ON p.id = pi.product_id
+       JOIN institutions i  ON i.id = p.institution_id
+      WHERE pi.value = $1
+        AND pi.revoked_at IS NULL
+        -- See offlineManifest: a deleted owner's label resolves to
+        -- "not registered" rather than showing an erased person's name.
+        AND EXISTS (
+          SELECT 1 FROM users u WHERE u.id = p.owner_id AND u.deleted_at IS NULL
+        )`,
+    [token],
+  );
+}
+
 export async function findProductById(productId: string): Promise<ProductRow | null> {
   return queryOne<ProductRow>(`${PRODUCT_SELECT} WHERE p.id = $1`, [productId]);
 }

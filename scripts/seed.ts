@@ -10,6 +10,7 @@ import {
   createInstitutionRequest,
   logPlatformAudit,
   normaliseDomain,
+  updateInstitution,
 } from '../src/lib/repos/platform';
 import type { InstitutionKind, InstitutionStatus, Role } from '../src/lib/types';
 import { recordScan } from '../src/lib/repos/scans';
@@ -72,6 +73,8 @@ async function main() {
     primaryDomain: 'aastu.edu.et',
     seatLimit: 25000,
   });
+  // Branding is set after creation, the way the platform console does it.
+  await updateInstitution(aastu.id, { brand_primary: '#0f6b3d' });
   const institutionId = aastu.id;
 
   const passwordHash = await hashPassword(DEMO_PASSWORD);
@@ -381,11 +384,14 @@ async function main() {
     city: string;
     domain: string;
     seatLimit: number | null;
+    /** Hex colour for labels, emails and the public status page. */
+    brand?: string;
     people: Array<{ name: string; local: string; role: Role; studentId?: string }>;
   }> = [
     {
       name: 'Bahir Dar University',
       code: 'BDU',
+      brand: '#7a1f4b',
       kind: 'UNIVERSITY',
       status: 'TRIAL',
       city: 'Bahir Dar',
@@ -401,6 +407,7 @@ async function main() {
     {
       name: 'Hi-Tech Solutions PLC',
       code: 'HITECH',
+      brand: '#b45309',
       kind: 'COMPANY',
       status: 'ACTIVE',
       city: 'Addis Ababa',
@@ -426,6 +433,8 @@ async function main() {
       primaryDomain: tenant.domain,
       seatLimit: tenant.seatLimit,
     });
+
+    if (tenant.brand) await updateInstitution(institution.id, { brand_primary: tenant.brand });
 
     const ids = new Map<string, string>();
     for (const person of tenant.people) {
@@ -504,14 +513,26 @@ async function main() {
      VALUES ($1,$2,'ops@campusguard.et',$3,'Platform Operator','ADMIN','ACTIVE','PLATFORM_ADMIN')`,
     [opsUserId, ops.id, passwordHash],
   );
-  await logPlatformAudit({
-    actorUserId: null,
-    actorEmail: 'seed@campusguard.local',
-    action: 'seed.platform_operator',
-    entityType: 'user',
-    entityId: opsUserId,
-    metadata: { note: 'Demo platform operator created by the seed script' },
-  });
+  const countryUserId = id.user();
+  await query(
+    `INSERT INTO users (id, institution_id, email, password_hash, full_name, role, status, platform_role, platform_scope_country)
+     VALUES ($1,$2,'ministry@campusguard.et',$3,'Ministry of Education','ADMIN','ACTIVE','COUNTRY_ADMIN','Ethiopia')`,
+    [countryUserId, ops.id, passwordHash],
+  );
+
+  for (const row of [
+    { id: opsUserId, action: 'seed.platform_operator' as const, note: 'Demo platform operator created by the seed script' },
+    { id: countryUserId, action: 'seed.country_operator' as const, note: 'Demo country operator (Ethiopia) created by the seed script' },
+  ]) {
+    await logPlatformAudit({
+      actorUserId: null,
+      actorEmail: 'seed@campusguard.local',
+      action: row.action,
+      entityType: 'user',
+      entityId: row.id,
+      metadata: { note: row.note },
+    });
+  }
 
   // --- One application waiting for review, so the queue is not empty -------
   await createInstitutionRequest({
@@ -531,6 +552,7 @@ async function main() {
 Seed complete.
 
   Tenants      : AASTU (university, active) · BDU (university, trial) · HITECH (company, active) · CGOPS (platform operations)
+  Branding     : each tenant has its own colour; labels, emails and the public status page follow it
   Institution : Addis Ababa Science and Technology University (AASTU)
   Students    : ${STUDENTS.length}
   Devices     : ${PRODUCTS.length}
@@ -548,6 +570,7 @@ Seed complete.
 
   Platform console:
     ops      ops@campusguard.et    (platform operator — /platform, one application awaiting review)
+    ministry ministry@campusguard.et (country operator for Ethiopia — /platform/country, counts only)
 `);
 
   process.exit(0);

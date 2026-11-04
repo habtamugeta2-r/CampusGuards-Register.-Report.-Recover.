@@ -111,7 +111,13 @@ Turning a single-university prototype into a platform that can hold many organis
 | 5.14 | Row-level security so isolation fails closed, not open | ⬜ **the most important remaining hardening step** |
 | 5.15 | Per-tenant rate limiting and a fair-share queue for manifest downloads | ⬜ before a noisy tenant can hurt another |
 | 5.16 | Tenant export and hard-delete job | ⬜ needed when an organisation leaves |
-| 5.17 | Per-tenant branding (logo, colour) | ⬜ cosmetic, but it is what makes a platform feel owned |
+| 5.17 | Per-tenant branding (logo, colour) | ✅ one hex + logo on labels, emails, the public page and the app shell |
+| 5.18 | Country-level operator grant | ✅ `COUNTRY_ADMIN` scoped to one country; `/platform/country` |
+| 5.19 | Country scoreboard honours the grant's scope | ✅ a requested country outside the grant is ignored, not rejected |
+| 5.20 | No owner identity in the public status query | ✅ `findPublicProductByToken` selects no owner columns — a dev-mode leak found by the flow test, fixed at the query |
+| 5.21 | A controlled country list (ISO 3166) shared by tenants and grants | ⬜ today a spelling difference silently empties a country scoreboard |
+| 5.22 | Cache and rate-limit the country scoreboard | ⬜ it aggregates `scan_events` per request |
+| 5.23 | Per-tenant custom domain (registry.aastu.edu.et) | ⬜ branding's last mile |
 
 ---
 

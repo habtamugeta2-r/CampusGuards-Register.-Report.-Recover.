@@ -31,7 +31,14 @@ export type InstitutionKind =
 
 export type InstitutionStatus = 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'CLOSED';
 
-export type PlatformRole = 'NONE' | 'PLATFORM_ADMIN';
+/**
+ * Platform-level authority, independent of the institution role.
+ *
+ * 'COUNTRY_ADMIN' is scoped to one country (users.platform_scope_country): a
+ * ministry or federation that can measure the platform across every
+ * organisation in that country, and cannot open any of them.
+ */
+export type PlatformRole = 'NONE' | 'PLATFORM_ADMIN' | 'COUNTRY_ADMIN';
 
 /**
  * One organisation using the platform: a university, a college, a company, a
@@ -51,6 +58,8 @@ export type Institution = {
   licence_expires_at: Date | null;
   seat_limit: number | null;
   logo_url: string | null;
+  /** Hex (#rrggbb) or null for the platform default. See src/lib/brand.ts. */
+  brand_primary: string | null;
   data_region: string;
   scan_retention_days: number;
   report_retention_days: number;
@@ -332,9 +341,12 @@ export type SessionUser = {
   /**
    * Platform-level authority, independent of the institution role. Almost
    * everyone is 'NONE'; a PLATFORM_ADMIN can administer every tenant from
-   * /platform. Deliberately a separate axis: granting someone control of one
-   * university must never quietly grant them control of all of them.
+   * /platform, a COUNTRY_ADMIN can measure every tenant in one country and
+   * open none of them. Deliberately a separate axis: granting someone control
+   * of one university must never quietly grant them control of all of them.
    */
   platformRole: PlatformRole;
+  /** The country a COUNTRY_ADMIN is scoped to; null for everyone else. */
+  platformCountry: string | null;
   profile: StudentProfile | null;
 };

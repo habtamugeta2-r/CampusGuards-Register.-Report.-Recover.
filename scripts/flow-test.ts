@@ -135,6 +135,31 @@ async function main() {
   const publicAfter = await call('GET', `/api/public/verify/${token}`);
   expect('public scan now shows it as reported missing', publicAfter.body.reportedMissing === true, publicAfter.body);
 
+  // The public page is the most-read branded surface in the product: a finder
+  // should be able to tell whose registry they are looking at, and be told
+  // nothing else about the owner.
+  const publicPage = await fetch(`${BASE}/s/${token}`);
+  const publicHtml = await publicPage.text();
+  expect('the public status page renders', publicPage.status === 200, publicPage.status);
+  expect(
+    'the public status page names the organisation the device is registered with',
+    publicHtml.includes('Addis Ababa Science and Technology University'),
+    publicHtml.slice(0, 200),
+  );
+  expect(
+    'the public status page is painted in that organisation’s colour',
+    /background-color:\s*#0f6b3d/i.test(publicHtml),
+    publicHtml.match(/background-color:[^"';]+/i)?.[0] ?? 'no inline brand colour found',
+  );
+  const ownerLeak = [email, 'Flow Test Student'].find((needle) => publicHtml.includes(needle));
+  expect(
+    'the public status page still names no owner',
+    ownerLeak === undefined,
+    ownerLeak === undefined
+      ? ''
+      : `leak «${ownerLeak}» near: ${publicHtml.slice(Math.max(0, publicHtml.indexOf(ownerLeak) - 120), publicHtml.indexOf(ownerLeak) + 60)}`,
+  );
+
   // --- 5. A member of the public finds it ---------------------------------
   const found = await call('POST', '/api/reports/found', {
     body: {
@@ -482,6 +507,8 @@ async function main() {
     approved.body,
   );
 
+  const approvedInstitutionId = approved.body.institution?.id as string | undefined;
+
   const doubleDecision = await call('POST', `/api/platform/requests/${application?.id}`, {
     cookie: opsCookie,
     body: { decision: 'APPROVED' },
@@ -537,6 +564,99 @@ async function main() {
     [sqlDomain],
   );
   expect('removing the tenant removes its domains', domainsAfterDelete?.n === 0, domainsAfterDelete);
+
+  // --- 12. A country operator sees the country, and none of the people -----
+  const countryCookie = await login('ministry@campusguard.et', 'Demo#2026');
+
+  const countryView = await call('GET', '/api/platform/country', { cookie: countryCookie });
+  expect('a country operator can read their country’s scoreboard', countryView.status === 200, countryView.body);
+  expect(
+    'the country scoreboard totals the organisations it covers',
+    (countryView.body.overview?.totals?.organisations ?? 0) > 0 &&
+      countryView.body.overview?.matchedOrganisations > 0,
+    countryView.body.overview?.totals,
+  );
+  const countryJson = JSON.stringify(countryView.body);
+  expect(
+    'the country scoreboard names organisations but no people',
+    countryJson.includes('@aastu.edu.et') === false &&
+      countryJson.includes('Abel Tesfaye') === false &&
+      countryJson.includes('UGR/') === false &&
+      countryJson.includes('Addis Ababa Science and Technology University') === true,
+    countryJson.slice(0, 200),
+  );
+
+  const pinned = await call('GET', '/api/platform/country?country=Kenya', { cookie: countryCookie });
+  expect(
+    'a country operator cannot widen their own scope',
+    pinned.status === 200 && pinned.body.country === 'Ethiopia',
+    pinned.body.country,
+  );
+
+  const countryProvision = await call('POST', '/api/platform/institutions', {
+    cookie: countryCookie,
+    body: { name: 'Country Created College', code: 'CCC1', kind: 'COLLEGE', primaryDomain: 'ccc-flow.edu.et' },
+  });
+  expect('a country operator cannot provision an organisation', countryProvision.status === 403, countryProvision.body);
+
+  const countryOverview = await call('GET', '/api/platform/overview', { cookie: countryCookie });
+  expect('a country operator cannot read the deployment overview', countryOverview.status === 403, countryOverview.body);
+
+  const countryAudit = await call('GET', '/api/platform/audit', { cookie: countryCookie });
+  expect('a country operator cannot read the platform audit log', countryAudit.status === 403, countryAudit.body);
+
+  const operatorCountry = await call('GET', '/api/platform/country?country=Ethiopia', { cookie: opsCookie });
+  expect(
+    'a platform operator can look at any country',
+    operatorCountry.status === 200 && operatorCountry.body.country === 'Ethiopia',
+    operatorCountry.body.country,
+  );
+
+  // --- 13. Branding belongs to the organisation, and grants nothing --------
+  const brandPatch = await call('PATCH', `/api/platform/institutions/${tenantId}`, {
+    cookie: opsCookie,
+    body: { brandPrimary: '#123456', logoUrl: 'https://flow.example.edu.et/logo.png' },
+  });
+  expect('a platform operator can set an organisation’s branding', brandPatch.status === 200, brandPatch.body);
+
+  const badBrand = await call('PATCH', `/api/platform/institutions/${tenantId}`, {
+    cookie: opsCookie,
+    body: { brandPrimary: 'rebeccapurple' },
+  });
+  expect('a colour that is not hex is rejected', badBrand.status === 400, badBrand.body);
+
+  // The tenant created earlier in this run was provisioned by the operator, so
+  // it has no administrator yet; the approved application does. Use that one to
+  // test what an organisation can change about itself.
+  const tenantAdminCookie: string = await login(
+    `admin@${applyDomain}`,
+    approved.body.temporaryPassword as string,
+  ).catch(() => '');
+  const selfBrand = await call('PATCH', '/api/admin/organisation', {
+    cookie: tenantAdminCookie,
+    body: { brandPrimary: '#654321', logoUrl: null },
+  });
+  expect('an organisation can set its own branding', selfBrand.status === 200, selfBrand.body);
+  const selfBrandWidening = await call('PATCH', '/api/admin/organisation', {
+    cookie: tenantAdminCookie,
+    body: { brandPrimary: '#654321', seatLimit: 999999 },
+  });
+  // The schema ignores unknown keys, so the point is not that the call fails —
+  // it is that the seat limit did not move.
+  const afterBranding = await call('GET', '/api/platform/institutions', { cookie: opsCookie });
+  const brandedTenant = (afterBranding.body.institutions ?? []).find(
+    (row: { id: string }) => row.id === approvedInstitutionId,
+  );
+  expect(
+    'but branding is not a way to widen its own reach: the seat limit did not move',
+    selfBrandWidening.status === 200 && brandedTenant?.seat_limit === null,
+    { seatLimit: brandedTenant?.seat_limit, status: selfBrandWidening.status },
+  );
+  expect(
+    'and the organisation’s own colour is what the platform now holds',
+    brandedTenant?.brand_primary === '#654321',
+    brandedTenant?.brand_primary,
+  );
 
   // --- Tidy up: close the tenants this run created --------------------------
   for (const id of [tenantId, approved.body.institution?.id]) {

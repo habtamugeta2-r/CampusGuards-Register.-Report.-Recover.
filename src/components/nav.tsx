@@ -39,12 +39,15 @@ export function TopNav({
   role,
   name,
   institution,
+  institutionLogoUrl = null,
   unread,
   isPlatformAdmin = false,
 }: {
   role: Role;
   name: string;
   institution: string;
+  /** The organisation's own mark, shown instead of the generic shield. */
+  institutionLogoUrl?: string | null;
   unread: number;
   /** Platform operators get a link across tenants; nobody else does. */
   isPlatformAdmin?: boolean;
@@ -63,7 +66,12 @@ export function TopNav({
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2.5">
         <Link href={role === 'STUDENT' ? '/student' : role === 'SECURITY' ? '/security' : '/admin'} className="flex items-center gap-2">
-          <ShieldIcon className="h-6 w-6 text-brand-700" />
+          {institutionLogoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={institutionLogoUrl} alt="" className="h-6 w-6 object-contain" />
+          ) : (
+            <ShieldIcon className="h-6 w-6 text-brand-700" />
+          )}
           <span className="text-sm font-semibold tracking-tight text-slate-900">CampusGuard</span>
           <span className="hidden text-xs text-slate-500 sm:inline">{institution}</span>
         </Link>

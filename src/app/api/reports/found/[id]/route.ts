@@ -56,7 +56,11 @@ export const PATCH = route(async (req: Request, { params }: { params: Promise<{ 
           ? `Your device was handed back. Collection point: ${body.custodyLocation}.`
           : 'Your device has been marked as returned to you.',
         link: '/student/reports',
-        email: { to: owner.email, subject: 'Your device has been returned' },
+        email: {
+          to: owner.email,
+          subject: 'Your device has been returned',
+          organisation: session.institution.name,
+        },
       });
     }
   }

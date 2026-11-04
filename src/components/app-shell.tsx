@@ -1,6 +1,7 @@
 import { getPageSession } from '@/lib/auth';
 import { unreadNotificationCount } from '@/lib/repos/misc';
 import { TopNav } from './nav';
+import { brandStyle } from '@/lib/brand';
 import type { Role } from '@/lib/types';
 
 export async function AppShell({
@@ -14,7 +15,7 @@ export async function AppShell({
   const unread = await unreadNotificationCount(session.user.id);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" style={brandStyle(session.institution.brand_primary)}>
       {/* WCAG 2.4.1 — keyboard and screen-reader users need a way past the nav
           on every page, not just the first. */}
       <a
@@ -27,6 +28,7 @@ export async function AppShell({
         role={session.role}
         name={session.user.full_name}
         institution={session.institution.code}
+        institutionLogoUrl={session.institution.logo_url}
         unread={unread}
         isPlatformAdmin={session.platformRole === 'PLATFORM_ADMIN'}
       />

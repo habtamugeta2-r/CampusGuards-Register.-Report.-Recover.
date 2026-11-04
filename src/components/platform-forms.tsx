@@ -30,6 +30,8 @@ export type Organisation = {
   admin_count: number;
   seat_limit: number | null;
   licence_expires_at: string | null;
+  logo_url: string | null;
+  brand_primary: string | null;
   domains: string[];
 };
 
@@ -288,6 +290,50 @@ export function OrganisationRowControls({
             }}
           />
         </div>
+
+        <div>
+          <label className="label" htmlFor={`brand-${organisation.id}`}>Brand colour</label>
+          <div className="flex items-center gap-1.5">
+            <input
+              id={`brand-${organisation.id}`}
+              className="h-8 w-12 cursor-pointer rounded border border-slate-300 bg-white p-0.5"
+              type="color"
+              defaultValue={organisation.brand_primary ?? '#145ce1'}
+              onBlur={(event) => {
+                if (event.target.value !== (organisation.brand_primary ?? '#145ce1')) {
+                  void patch({ brandPrimary: event.target.value }, 'Brand colour updated.');
+                }
+              }}
+            />
+            {organisation.brand_primary ? (
+              <button
+                className="text-xs text-slate-500 hover:text-red-700"
+                onClick={() => void patch({ brandPrimary: null }, 'Brand colour reset to the platform default.')}
+              >
+                reset
+              </button>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3">
+        <label className="label" htmlFor={`logo-${organisation.id}`}>Logo URL</label>
+        <input
+          id={`logo-${organisation.id}`}
+          className="input btn-sm w-full max-w-md py-1"
+          defaultValue={organisation.logo_url ?? ''}
+          placeholder="https://example.edu.et/logo.png"
+          onBlur={(event) => {
+            if (event.target.value !== (organisation.logo_url ?? '')) {
+              void patch({ logoUrl: event.target.value || null }, 'Logo updated.');
+            }
+          }}
+        />
+        <p className="mt-1 text-xs text-slate-500">
+          Shown on the organisation’s printed labels, emails and public status page. Hosted by the organisation — this
+          is a URL, not an upload.
+        </p>
       </div>
 
       <div className="mt-3">
@@ -513,10 +559,18 @@ export function ApplicationCard({ application }: { application: Application }) {
 export function OrganisationProfileForm({
   initial,
 }: {
-  initial: { name: string; city: string | null; country: string; timezone: string };
+  initial: {
+    name: string;
+    city: string | null;
+    country: string;
+    timezone: string;
+    logoUrl: string | null;
+    brandPrimary: string | null;
+  };
 }) {
   const router = useRouter();
   const [state, setState] = useState<Feedback>({});
+  const [colour, setColour] = useState(initial.brandPrimary ?? '#145ce1');
 
   return (
     <form
@@ -531,6 +585,8 @@ export function OrganisationProfileForm({
             city: form.get('city') || null,
             country: form.get('country'),
             timezone: form.get('timezone'),
+            logoUrl: form.get('logoUrl') || null,
+            brandPrimary: colour,
           });
           setState({ pending: false, notice: 'Organisation profile updated.' });
           router.refresh();
@@ -566,6 +622,43 @@ export function OrganisationProfileForm({
           defaultValue={initial.timezone}
           placeholder="Africa/Addis_Ababa"
         />
+      </div>
+
+      <div>
+        <label className="label" htmlFor="profile-logo">Logo URL</label>
+        <input
+          id="profile-logo"
+          name="logoUrl"
+          className="input"
+          defaultValue={initial.logoUrl ?? ''}
+          placeholder="https://example.edu.et/logo.png"
+        />
+        <p className="mt-1 text-xs text-slate-500">
+          Hosted by your organisation — this is a URL, not an upload. It appears on printed labels, emails and your
+          public status page.
+        </p>
+      </div>
+
+      <div>
+        <label className="label" htmlFor="profile-brand">Brand colour</label>
+        <div className="flex items-center gap-2">
+          <input
+            id="profile-brand"
+            className="h-9 w-14 cursor-pointer rounded border border-slate-300 bg-white p-1"
+            type="color"
+            value={colour}
+            onChange={(event) => setColour(event.target.value)}
+          />
+          <span className="font-mono text-xs text-slate-600">{colour}</span>
+          {initial.brandPrimary ? (
+            <button type="button" className="text-xs text-slate-500 hover:text-red-700" onClick={() => setColour('#145ce1')}>
+              reset
+            </button>
+          ) : null}
+        </div>
+        <p className="mt-1 text-xs text-slate-500">
+          Used for buttons, headings and the banner on your public pages. Every other shade is derived from it.
+        </p>
       </div>
 
       <button className="btn-secondary btn-sm" disabled={state.pending}>

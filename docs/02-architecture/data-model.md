@@ -2,8 +2,9 @@
 
 Schema: [`0001_init.sql`](../../db/migrations/0001_init.sql),
 [`0002_identifier_uniqueness.sql`](../../db/migrations/0002_identifier_uniqueness.sql),
-[`0003_multi_tenancy.sql`](../../db/migrations/0003_multi_tenancy.sql) and
-[`0004_institution_domain_sync.sql`](../../db/migrations/0004_institution_domain_sync.sql).
+[`0003_multi_tenancy.sql`](../../db/migrations/0003_multi_tenancy.sql),
+[`0004_institution_domain_sync.sql`](../../db/migrations/0004_institution_domain_sync.sql) and
+[`0005_country_role_and_branding.sql`](../../db/migrations/0005_country_role_and_branding.sql).
 
 Every table of tenant data carries `institution_id`. The tenant model — types, lifecycle, domains,
 licences, data region and the platform operator's grant — is described in
@@ -120,6 +121,11 @@ added was the *operation* of many tenants:
 Migration 0004 adds a trigger that keeps `institution_domains` in step with
 `institutions.email_domain` — without it, anything that inserts a tenant with plain SQL creates an
 organisation nobody can sign in to (`institution_domains` is what the login path reads).
+
+Migration 0005 adds two things the platform needed once it held more than one organisation: the
+`COUNTRY_ADMIN` grant with its country scope (a check constraint keeps the scope and the role
+consistent), and `institutions.brand_primary` — one hex per tenant, from which every other shade is
+derived at render time.
 
 ## 7. Migration discipline
 

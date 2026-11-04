@@ -191,6 +191,7 @@ export type UpdateInstitutionInput = Partial<
     | 'licence_expires_at'
     | 'seat_limit'
     | 'logo_url'
+    | 'brand_primary'
     | 'data_region'
     | 'scan_retention_days'
     | 'report_retention_days'
@@ -213,6 +214,7 @@ export async function updateInstitution(institutionId: string, patch: UpdateInst
     ['licence_expires_at', 'licence_expires_at'],
     ['seat_limit', 'seat_limit'],
     ['logo_url', 'logo_url'],
+    ['brand_primary', 'brand_primary'],
     ['data_region', 'data_region'],
     ['scan_retention_days', 'scan_retention_days'],
     ['report_retention_days', 'report_retention_days'],
@@ -233,14 +235,18 @@ export async function updateInstitution(institutionId: string, patch: UpdateInst
   await query(`UPDATE institutions SET ${fields.join(', ')}, updated_at = now() WHERE id = $1`, params);
 }
 
-/** Editing an institution's own profile — the fields an administrator may change. */
+/**
+ * Editing an institution's own profile — the fields an administrator may
+ * change. Branding is among them because it is the organisation's own face on
+ * its own labels and pages; it grants no access to anything.
+ */
 export async function updateInstitutionProfile(
   institutionId: string,
-  patch: Partial<Pick<Institution, 'name' | 'city' | 'country' | 'timezone'>>,
+  patch: Partial<Pick<Institution, 'name' | 'city' | 'country' | 'timezone' | 'logo_url' | 'brand_primary'>>,
 ): Promise<void> {
   const fields: string[] = [];
   const params: unknown[] = [institutionId];
-  for (const key of ['name', 'city', 'country', 'timezone'] as const) {
+  for (const key of ['name', 'city', 'country', 'timezone', 'logo_url', 'brand_primary'] as const) {
     const value = patch[key];
     if (value === undefined) continue;
     params.push(value);
@@ -398,6 +404,149 @@ export async function platformOverview(): Promise<PlatformOverview> {
     openReports: Number(totals?.open_reports ?? 0),
     pendingRequests: Number(totals?.pending_requests ?? 0),
     expiringLicences: expiring,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Country overview
+// ---------------------------------------------------------------------------
+
+export type CountryOverview = {
+  country: string;
+  /** How many organisations the caller's scope actually matches. */
+  matchedOrganisations: number;
+  totals: {
+    organisations: number;
+    people: number;
+    devices: number;
+    scans30d: number;
+    reportsOpen: number;
+    reportsRecovered: number;
+    /** Percentage of closed reports that ended in a recovery. 0 when nothing has closed. */
+    recoveryRate: number;
+  };
+  /**
+   * One row per organisation. Names and counts — deliberately not people: a
+   * ministry can reasonably be told how each university is doing, and must not
+   * be told who owns what inside any of them.
+   */
+  organisations: Array<{
+    id: string;
+    name: string;
+    code: string;
+    kind: InstitutionKind;
+    status: InstitutionStatus;
+    city: string | null;
+    people: number;
+    devices: number;
+    scans30d: number;
+    reportsOpen: number;
+    reportsRecovered: number;
+  }>;
+  byKind: Array<{ kind: InstitutionKind; count: number }>;
+  /** Scans per day for the last 30 days, oldest first. */
+  daily: Array<{ day: string; scans: number }>;
+};
+
+export async function countryOverview(country: string): Promise<CountryOverview> {
+  const totals = await queryOne<{
+    organisations: number;
+    people: number;
+    devices: number;
+    scans_30d: number;
+    reports_open: number;
+    reports_recovered: number;
+  }>(
+    `WITH orgs AS (SELECT id FROM institutions WHERE country = $1)
+     SELECT (SELECT count(*) FROM orgs)::int AS organisations,
+            (SELECT count(*) FROM users u JOIN orgs o ON o.id = u.institution_id
+              WHERE u.deleted_at IS NULL)::int AS people,
+            (SELECT count(*) FROM products p JOIN orgs o ON o.id = p.institution_id)::int AS devices,
+            (SELECT count(*) FROM scan_events s JOIN orgs o ON o.id = s.institution_id
+              WHERE s.scanned_at > now() - interval '30 days')::int AS scans_30d,
+            (SELECT count(*) FROM missing_reports m JOIN orgs o ON o.id = m.institution_id
+              WHERE m.status = 'OPEN')::int AS reports_open,
+            (SELECT count(*) FROM missing_reports m JOIN orgs o ON o.id = m.institution_id
+              WHERE m.status = 'RESOLVED_RECOVERED')::int AS reports_recovered`,
+    [country],
+  );
+
+  const organisations = await query<{
+    id: string;
+    name: string;
+    code: string;
+    kind: InstitutionKind;
+    status: InstitutionStatus;
+    city: string | null;
+    people: number;
+    devices: number;
+    scans_30d: number;
+    reports_open: number;
+    reports_recovered: number;
+  }>(
+    `SELECT i.id, i.name, i.code, i.kind, i.status, i.city,
+            (SELECT count(*) FROM users u
+              WHERE u.institution_id = i.id AND u.deleted_at IS NULL)::int AS people,
+            (SELECT count(*) FROM products p WHERE p.institution_id = i.id)::int AS devices,
+            (SELECT count(*) FROM scan_events s
+              WHERE s.institution_id = i.id
+                AND s.scanned_at > now() - interval '30 days')::int AS scans_30d,
+            (SELECT count(*) FROM missing_reports m
+              WHERE m.institution_id = i.id AND m.status = 'OPEN')::int AS reports_open,
+            (SELECT count(*) FROM missing_reports m
+              WHERE m.institution_id = i.id AND m.status = 'RESOLVED_RECOVERED')::int AS reports_recovered
+       FROM institutions i
+      WHERE i.country = $1
+      ORDER BY i.name`,
+    [country],
+  );
+
+  const byKind = await query<{ kind: InstitutionKind; count: number }>(
+    `SELECT kind, count(*)::int AS count FROM institutions
+      WHERE country = $1 GROUP BY kind ORDER BY count DESC, kind`,
+    [country],
+  );
+
+  const daily = await query<{ day: string; scans: number }>(
+    `SELECT to_char(date_trunc('day', s.scanned_at), 'YYYY-MM-DD') AS day, count(*)::int AS scans
+       FROM scan_events s
+       JOIN institutions i ON i.id = s.institution_id
+      WHERE i.country = $1
+        AND s.scanned_at > now() - interval '30 days'
+      GROUP BY 1 ORDER BY 1`,
+    [country],
+  );
+
+  const recovered = Number(totals?.reports_recovered ?? 0);
+  const open = Number(totals?.reports_open ?? 0);
+
+  return {
+    country,
+    matchedOrganisations: organisations.length,
+    totals: {
+      organisations: Number(totals?.organisations ?? 0),
+      people: Number(totals?.people ?? 0),
+      devices: Number(totals?.devices ?? 0),
+      scans30d: Number(totals?.scans_30d ?? 0),
+      reportsOpen: open,
+      reportsRecovered: recovered,
+      recoveryRate: open + recovered === 0 ? 0 : Math.round((recovered / (open + recovered)) * 100),
+    },
+    organisations: organisations.map((row) => ({
+      id: row.id,
+      name: row.name,
+      code: row.code,
+      kind: row.kind,
+      status: row.status,
+      city: row.city,
+      people: row.people,
+      devices: row.devices,
+      scans30d: row.scans_30d,
+      reportsOpen: row.reports_open,
+      reportsRecovered: row.reports_recovered,
+    })),
+    byKind,
+    daily,
   };
 }
 

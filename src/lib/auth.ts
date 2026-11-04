@@ -66,6 +66,46 @@ export async function requirePlatformPage(): Promise<SessionUser> {
 
 export const getPlatformPageSession = cache(async () => requirePlatformPage());
 
+/**
+ * Anyone with a platform grant — operators and country staff — may open the
+ * console shell. Individual pages then decide what each of them may see, which
+ * is why this exists separately from requirePlatformPage().
+ */
+export async function requirePlatformShellPage(): Promise<SessionUser> {
+  const session = await requirePage();
+  if (session.platformRole === 'NONE') redirect(roleHome(session.role, session.platformRole));
+  return session;
+}
+
+export const getPlatformShellSession = cache(async () => requirePlatformShellPage());
+
+/**
+ * Which country a platform-staff member may look at.
+ *
+ * A PLATFORM_ADMIN can ask for any country. A COUNTRY_ADMIN is pinned to the
+ * one in their grant: a requested country is ignored rather than rejected, so
+ * a country operator cannot probe for the existence of other scopes by
+ * watching which requests fail.
+ */
+export function countryScopeFor(session: SessionUser, requested?: string | null): string {
+  if (session.platformRole === 'PLATFORM_ADMIN') return requested?.trim() || session.institution.country;
+  return session.platformCountry ?? session.institution.country;
+}
+
+/**
+ * API guard for the country scoreboard: operators and country staff, never a
+ * tenant administrator, and never a country other than the caller's own.
+ */
+export async function requireCountryRead(
+  requested?: string | null,
+): Promise<{ session: SessionUser; country: string }> {
+  const session = await requireUser();
+  if (session.platformRole !== 'PLATFORM_ADMIN' && session.platformRole !== 'COUNTRY_ADMIN') {
+    throw new ForbiddenError('This view is restricted to platform and country staff.');
+  }
+  return { session, country: countryScopeFor(session, requested) };
+}
+
 /** Page-level guard: redirect instead of throwing. */
 export async function requirePage(roles?: Role[]): Promise<SessionUser> {
   const session = await getSessionUser();

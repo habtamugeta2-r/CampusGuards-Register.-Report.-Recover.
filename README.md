@@ -37,10 +37,12 @@ organisation — and to add the second, third and hundredth afterwards.
 | Governance controls | ✅ | Retention windows, justification-gated scan history, audit log |
 | Data-subject rights | ✅ | JSON export, correction/deletion/objection requests, consent records |
 | PWA (installable, offline shell) | ✅ | Service worker + manifest; authenticated API is never cached |
-| Automated tests | ✅ | 21 unit tests, 45 smoke checks, 55 end-to-end workflow checks, 33-page accessibility audit, load test at 20k devices |
+| Automated tests | ✅ | 21 unit tests, 47 smoke checks, 73 end-to-end workflow checks, 35-page accessibility audit, load test at 20k devices |
 | Production deployment tooling | ⚠️ | Documented + Dockerfile/compose; not yet run against a live Ethiopian host |
 | Multi-tenant platform | ✅ | Many organisations per deployment: universities, colleges, companies, government offices — each with its own domains, retention, licence and data region |
 | Platform operator console | ✅ | `/platform` — provision tenants, review applications, set licences and seat limits. Operators see counts, never people |
+| Country-level view | ✅ | `/platform/country` — a ministry or federation sees adoption and recovery across a country, aggregate only, and cannot open a tenant |
+| Per-tenant branding | ✅ | One hex and a logo per organisation, on printed labels, emails and the public status page |
 | Public onboarding | ✅ | `/join` — an organisation applies; a human approves it |
 
 
@@ -81,6 +83,7 @@ Sign in with password **`Demo#2026`**:
 | Administrator, other tenant | `admin@bdu.edu.et` | Same console, different university (a trial tenant) |
 | Gate guard, company tenant | `guard@hitechplc.et` | A company whose "students" are employees |
 | Platform operator | `ops@campusguard.et` | `/platform` — four tenants, one application awaiting review |
+| Country operator | `ministry@campusguard.et` | `/platform/country` — Ethiopia's scoreboard: counts, no people |
 
 ### No PostgreSQL server? Use the bundled one
 
@@ -104,11 +107,11 @@ npm run typecheck                       # TypeScript, no emit
 npm run build                           # production bundle (also validates Next.js route modules)
 npm test                                # unit tests (verification rules, tokens, formatting)
 npm run dev                             # in one terminal …
-npm run smoke                           # … 45 page/API checks as each role
-npm run flow-test                       # 55 end-to-end workflow checks through the HTTP API
+npm run smoke                           # … 47 page/API checks as each role
+npm run flow-test                       # 73 end-to-end workflow checks through the HTTP API
 npm run retention                       # apply each institution's retention windows (deletes)
 npm run load-test                       # 20k-device load test: manifest + verify latency
-npm run a11y                            # axe-core over 33 pages as each role
+npm run a11y                            # axe-core over 35 pages as each role
 npm run backup                          # encrypted dump, verified by restoring it
 ```
 
@@ -193,12 +196,17 @@ that requirement open.
     active         trial              active          own tenant)
         │            │                   │
    own domains · own retention · own administrators · own data region
+                                  │
+                    country operator (/platform/country)
+                aggregates for one country · no tenant opens
 ```
 
-The operator's view is counts: organisations, people, devices, scans, open reports. It is not
-people. Everything an operator does is written to a platform audit log that no tenant can read or
-edit, and an organisation's own administrator can change its name and location but not its domains,
-licence or seat limit — otherwise the platform would be a suggestion.
+Neither console sees people. The operator's view is counts: organisations, people, devices, scans,
+open reports. The country view is the same numbers for one country, plus one row per organisation
+(name, type, status and counts) because a ministry that cannot compare institutions cannot do its
+job. Everything either of them does is written to a platform audit log that no tenant can read or
+edit, and an organisation's own administrator can change its name, location and branding but not its
+domains, licence or seat limit — otherwise the platform would be a suggestion.
 
 The full model, including what isolation does and does not depend on, is in
 [`docs/02-architecture/multi-tenancy.md`](docs/02-architecture/multi-tenancy.md).

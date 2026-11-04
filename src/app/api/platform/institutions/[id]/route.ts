@@ -7,6 +7,7 @@ import {
   updateInstitution,
 } from '@/lib/repos/platform';
 import { INSTITUTION_KINDS, INSTITUTION_STATUSES } from '@/lib/constants';
+import { BRAND_COLOUR } from '@/lib/brand';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -29,6 +30,12 @@ const patchSchema = z.object({
   seatLimit: z.number().int().positive().max(5_000_000).nullable().optional(),
   licenceExpiresAt: z.string().datetime().nullable().optional(),
   logoUrl: z.string().trim().max(500).nullable().optional(),
+  brandPrimary: z
+    .string()
+    .trim()
+    .regex(BRAND_COLOUR, 'Use a hex colour, e.g. #145ce1.')
+    .nullable()
+    .optional(),
   reason: z.string().trim().min(4).max(500).optional(),
 });
 
@@ -60,6 +67,7 @@ export const PATCH = route(async (req: Request, { params }: { params: Promise<{ 
     code: patch.code ? patch.code.toUpperCase() : undefined,
     licence_expires_at: patch.licenceExpiresAt === undefined ? undefined : patch.licenceExpiresAt ? new Date(patch.licenceExpiresAt) : null,
     logo_url: patch.logoUrl,
+    brand_primary: patch.brandPrimary,
   });
 
   await logPlatformAudit({

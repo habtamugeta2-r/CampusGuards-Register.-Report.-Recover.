@@ -9,6 +9,9 @@ import type { PlatformRole, Role } from './types';
  */
 export function roleHome(role: Role, platformRole: PlatformRole = 'NONE'): string {
   if (platformRole === 'PLATFORM_ADMIN') return '/platform';
+  // A country operator's whole view is their country; there is nothing else
+  // in the console they are allowed to open.
+  if (platformRole === 'COUNTRY_ADMIN') return '/platform/country';
   switch (role) {
     case 'ADMIN':
       return '/admin';

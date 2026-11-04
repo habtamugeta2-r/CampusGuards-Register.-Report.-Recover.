@@ -1,6 +1,7 @@
 'use client';
 
 import { Card } from './ui';
+import { DEFAULT_BRAND, brandStyle } from '@/lib/brand';
 
 /**
  * The printable QR label.
@@ -15,6 +16,8 @@ export function QrLabel({
   device,
   owner,
   institution,
+  institutionLogoUrl = null,
+  brandColour = null,
   publicUrl,
 }: {
   token: string;
@@ -22,8 +25,11 @@ export function QrLabel({
   device: string;
   owner: string;
   institution: string;
+  institutionLogoUrl?: string | null;
+  brandColour?: string | null;
   publicUrl: string;
 }) {
+  const brand = brandColour ?? DEFAULT_BRAND;
   return (
     <Card className="card-pad">
       <div className="flex items-start justify-between gap-3">
@@ -40,15 +46,26 @@ export function QrLabel({
       </div>
 
       <div className="mt-4 flex justify-center">
-        <div className="w-[300px] rounded-xl border-2 border-dashed border-slate-300 bg-white p-4 text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-700">CampusGuard</p>
+        <div
+          className="w-[300px] rounded-xl border-2 border-dashed border-slate-300 bg-white p-4 text-center"
+          style={brandStyle(brandColour)}
+        >
+          <div className="flex items-center justify-center gap-1.5">
+            {institutionLogoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={institutionLogoUrl} alt="" className="h-4 w-4 object-contain" />
+            ) : null}
+            <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: brand }}>
+              {institution}
+            </p>
+          </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={qrDataUrl} alt={`QR code for ${device}`} className="mx-auto my-2 h-[200px] w-[200px]" />
           <p className="font-mono text-xs font-semibold tracking-tight text-slate-900">{token}</p>
           <p className="mt-1 text-[10px] leading-tight text-slate-500">
             {device}
             <br />
-            {institution} · if found, scan or hand in
+            CampusGuard · if found, scan or hand in
           </p>
         </div>
       </div>

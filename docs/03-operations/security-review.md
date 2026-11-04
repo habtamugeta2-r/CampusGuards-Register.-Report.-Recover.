@@ -19,7 +19,8 @@ Written 2026-11-04, against the code in this repository at that date.
 | Automated tests | 21 unit tests, 45 smoke checks, 55 end-to-end workflow checks, 33-page accessibility audit, load test at 20k devices |
 | Probing the running application through its HTTP API | Role separation, erasure behaviour, justification gating, error handling |
 | Dependency vulnerability scan (`npm audit`) | Findings below |
-| Multi-tenant isolation | Cross-tenant lookup, seat limits, tenant status, platform API reachability — covered by 17 checks in `npm run flow-test` |
+| Multi-tenant isolation | Cross-tenant lookup, seat limits, tenant status, platform API reachability, country-operator scope — covered by 27 checks in `npm run flow-test` |
+| Public pages | The QR status page is fetched as HTML and asserted to name no owner |
 | **Not** done | Penetration test, fuzzing, infrastructure/network hardening review, formal review of the cryptography in `src/lib/offline/cache.ts`, dependency licence review |
 
 ---
@@ -43,6 +44,8 @@ anti-surveillance rules in the product are not decoration.
 | External attacker on the app | Take over accounts, exfiltrate the registry | bcrypt(12), 8-attempt lockout, server-side sessions hashed at rest, RBAC on every route, Zod validation, parameterised SQL everywhere | See findings F-4 and F-5 |
 | A platform operator | Read another organisation's data | A separate grant (`platform_role`) with its own guard; the platform API returns counts only; actions logged to `platform_audit_logs`, which no tenant can edit | The console could be extended to leak tenant data by a future change. Isolation inside tenants is enforced in application code, not by the database — see F-13 |
 | One tenant reaching another | Read a person or device across tenants | Every repository query filters on `session.institution.id`; no route accepts a tenant id from the request; domain lookups are globally unique | F-13: a single missing `WHERE institution_id = $1` is a cross-tenant leak |
+| A country operator (ministry, regulator) | Turn a national measurement into a national registry | A scoped grant (`COUNTRY_ADMIN` + `platform_scope_country`) with its own guard; the API returns aggregates and organisation names only; the scope is pinned and a request for another country is ignored, not rejected | The role learns *which* organisations are on the platform and roughly how large each is. That is the point of the grant, but it is information — the tenancy agreement should say so |
+| Anyone scanning a QR label | Learn who owns a device | The public page renders no identity, and `findPublicProductByToken` does not select the owner's name, email or student ID at all | F-15: rendering nothing is not the same as holding nothing — server-component data is serialised into the RSC payload in development |
 
 ---
 
@@ -207,6 +210,33 @@ hygiene.
 - Before the pilot: require two operators for destructive actions such as closing a tenant, alert on
   any new `platform_audit_logs` row, and review that log weekly.
 
+### F-15 · The public status page held owner identity it never rendered — **closed** (was high)
+
+`/s/<token>` — the page any phone camera opens — rendered no owner identity, and still shipped the
+owner's name, email, student ID and serial number inside the RSC payload, because the page's query
+selected a full product row joined to the owner. The rendered page was correct; the data was
+present. It was found by an assertion in the flow test that greps the page HTML for the student's
+email, added while the page was being reworked for branding.
+
+- Fixed at the query, not at the component: `findPublicProductByToken` selects no owner columns, so
+  the page cannot leak identity even if a future change passes the row to a client component.
+- The lesson generalises: **a page that must not reveal a field should not have selected it.**
+  "We do not render it" is a weaker guarantee than "the query cannot return it", and only one of
+  them survives the next refactor.
+- Verified by: `the public status page still names no owner` in `npm run flow-test`.
+
+### F-16 · A country operator is a new reader of cross-tenant information — **open** (low)
+
+`COUNTRY_ADMIN` can see organisation names and per-organisation counts for a whole country. No
+person, device or scan is exposed, and the guard is separate from the operator's, but it is a new
+actor holding a cross-tenant view, and it is only as safe as that one guard.
+
+- Mitigations in place: `requireCountryRead()` admits only the two platform roles; the scope is
+  pinned per user; the API returns aggregates and organisation rows; every read is logged to
+  `platform_audit_logs`.
+- Before a real ministry is given the grant: alert on `platform.country_overview` audit rows and
+  review them monthly.
+
 ### F-12 · No dependency pinning or lockfile policy in CI — **open** (low)
 
 CI runs `npm ci` from the committed lockfile (good) but nothing fails the build on new advisories.
@@ -220,6 +250,7 @@ CI runs `npm ci` from the committed lockfile (good) but nothing fails the build 
 - [ ] Independent security review by someone who did not write this code
 - [ ] F-13 row-level security between tenants, before a second real organisation is onboarded
 - [ ] F-14 two-person rule for closing a tenant, plus alerting on platform audit rows
+- [ ] F-16 alerting and monthly review of country-operator reads
 - [ ] F-13 row-level security between tenants, before a second real organisation is onboarded
 - [ ] F-14 two-person rule for closing a tenant, and alerting on platform audit rows
 - [ ] F-4 registration throttling and non-enumerating response

@@ -54,7 +54,15 @@ export const PATCH = route(async (req: Request, { params }: { params: Promise<{ 
             body.notes ?? ''
           }`.trim(),
     link: '/student/reports',
-    ...(owner?.email ? { email: { to: owner.email, subject: 'Update on your CampusGuard report' } } : {}),
+    ...(owner?.email
+      ? {
+          email: {
+            to: owner.email,
+            subject: 'Update on your CampusGuard report',
+            organisation: session.institution.name,
+          },
+        }
+      : {}),
   });
 
   return ok({ ok: true });

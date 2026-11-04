@@ -172,6 +172,8 @@ export default async function AdminSettingsPage() {
                   city: institution.city,
                   country: institution.country,
                   timezone: institution.timezone,
+                  logoUrl: institution.logo_url,
+                  brandPrimary: institution.brand_primary,
                 }}
               />
             </div>

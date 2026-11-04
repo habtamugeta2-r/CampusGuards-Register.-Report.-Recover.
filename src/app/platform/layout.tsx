@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ShieldIcon } from '@/components/nav';
-import { getPlatformPageSession } from '@/lib/auth';
+import { getPlatformShellSession } from '@/lib/auth';
 import { SignOutButton } from '@/components/auth-forms';
 
 export const metadata = { title: 'Platform · CampusGuard' };
@@ -12,18 +12,26 @@ export const dynamic = 'force-dynamic';
  * Structurally separate from AppShell on purpose: this console administers
  * organisations, not the devices inside one of them, and its guard is a
  * different grant (platform_role, not the institution ADMIN role). Keeping it
- * in its own tree means a platform operator never sees a tenant's navigation,
- * and a tenant administrator never sees a link here.
+ * in its own tree means platform staff never see a tenant's navigation, and a
+ * tenant administrator never sees a link here.
+ *
+ * Two grants share the shell. A PLATFORM_ADMIN provisions and licences
+ * organisations; a COUNTRY_ADMIN measures a whole country and can open nothing
+ * else, so their navigation is deliberately one link long.
  */
 export default async function PlatformLayout({ children }: { children: React.ReactNode }) {
-  const session = await getPlatformPageSession();
+  const session = await getPlatformShellSession();
+  const isCountryAdmin = session.platformRole === 'COUNTRY_ADMIN';
 
-  const links = [
-    { href: '/platform', label: 'Overview' },
-    { href: '/platform/organisations', label: 'Organisations' },
-    { href: '/platform/requests', label: 'Applications' },
-    { href: '/platform/audit', label: 'Platform audit' },
-  ];
+  const links = isCountryAdmin
+    ? [{ href: '/platform/country', label: session.platformCountry ?? 'Country' }]
+    : [
+        { href: '/platform', label: 'Overview' },
+        { href: '/platform/country', label: 'Countries' },
+        { href: '/platform/organisations', label: 'Organisations' },
+        { href: '/platform/requests', label: 'Applications' },
+        { href: '/platform/audit', label: 'Platform audit' },
+      ];
 
   return (
     <div className="min-h-screen">
@@ -63,9 +71,19 @@ export default async function PlatformLayout({ children }: { children: React.Rea
 
       <main id="platform-content" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 focus:outline-none sm:py-8">
         <p className="mb-5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-          You are signed in as a <strong>platform operator</strong>. You can provision and licence organisations, but
-          you cannot read the people, devices or scans inside them — those stay with each organisation’s own
-          administrators. Everything you do here is logged in the platform audit trail.
+          {isCountryAdmin ? (
+            <>
+              You are signed in as a <strong>country operator</strong> for {session.platformCountry}. You can see how
+              every organisation in {session.platformCountry} is doing, and you cannot open any of them — no people,
+              devices or scans, only counts. Everything you do here is logged in the platform audit trail.
+            </>
+          ) : (
+            <>
+              You are signed in as a <strong>platform operator</strong>. You can provision and licence organisations,
+              but you cannot read the people, devices or scans inside them — those stay with each organisation’s own
+              administrators. Everything you do here is logged in the platform audit trail.
+            </>
+          )}
         </p>
         {children}
       </main>

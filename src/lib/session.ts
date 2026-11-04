@@ -55,7 +55,7 @@ const SESSION_SELECT = `
     s.id            AS session_id,
     s.last_seen_at  AS session_last_seen,
     u.id, u.institution_id, u.email, u.full_name, u.phone, u.role, u.status,
-    u.platform_role,
+    u.platform_role, u.platform_scope_country,
     u.last_login_at, u.password_changed_at, u.failed_login_count, u.locked_until,
     u.created_at, u.updated_at, u.deleted_at,
     i.id AS i_id, i.name AS i_name, i.code AS i_code, i.email_domain AS i_email_domain,
@@ -89,8 +89,10 @@ type SessionJoinRow = {
   i_licence_expires_at: Date | null;
   i_seat_limit: number | null;
   i_logo_url: string | null;
+  i_brand_primary: string | null;
   i_data_region: string;
   platform_role: PlatformRole;
+  platform_scope_country: string | null;
   scan_retention_days: number;
   report_retention_days: number;
   audit_retention_days: number;
@@ -141,6 +143,7 @@ function mapSession(row: SessionJoinRow): SessionUser {
     licence_expires_at: row.i_licence_expires_at,
     seat_limit: row.i_seat_limit,
     logo_url: row.i_logo_url,
+    brand_primary: row.i_brand_primary,
     data_region: row.i_data_region,
     scan_retention_days: row.scan_retention_days,
     report_retention_days: row.report_retention_days,
@@ -172,6 +175,7 @@ function mapSession(row: SessionJoinRow): SessionUser {
     institution,
     role: row.role,
     platformRole: row.platform_role,
+    platformCountry: row.platform_scope_country,
     profile,
   };
 }
