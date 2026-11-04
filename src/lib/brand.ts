@@ -15,23 +15,23 @@ import type { CSSProperties } from 'react';
  * colour renders exactly as it did before.
  */
 
-export const DEFAULT_BRAND = '#145ce1';
+export const DEFAULT_BRAND = '#4f46e5';
 
 const SHADE_STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const;
 export type BrandShade = (typeof SHADE_STEPS)[number];
 
 export const BRAND_FALLBACKS: Record<BrandShade, string> = {
-  50: '#eef7ff',
-  100: '#d9edff',
-  200: '#bce0ff',
-  300: '#8ecdff',
-  400: '#59b0ff',
-  500: '#3291ff',
-  600: '#1b73f6',
+  50: '#eef2ff',
+  100: '#e0e7ff',
+  200: '#c7d2fe',
+  300: '#a5b4fc',
+  400: '#818cf8',
+  500: '#6366f1',
+  600: '#5457ee',
   700: DEFAULT_BRAND,
-  800: '#174bb6',
-  900: '#19428f',
-  950: '#142957',
+  800: '#4338ca',
+  900: '#3730a3',
+  950: '#1e1b4b',
 };
 
 const HEX = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i;

@@ -1,7 +1,7 @@
-import Link from 'next/link';
-import { ShieldIcon } from '@/components/nav';
+import { AppSidebar } from '@/components/nav';
+import type { SidebarSection } from '@/components/nav-config';
+import { LockIcon } from '@/components/icons';
 import { getPlatformShellSession } from '@/lib/auth';
-import { SignOutButton } from '@/components/auth-forms';
 
 export const metadata = { title: 'Platform · CampusGuard' };
 export const dynamic = 'force-dynamic';
@@ -23,18 +23,22 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   const session = await getPlatformShellSession();
   const isCountryAdmin = session.platformRole === 'COUNTRY_ADMIN';
 
-  const links = isCountryAdmin
-    ? [{ href: '/platform/country', label: session.platformCountry ?? 'Country' }]
+  const sections: SidebarSection[] = isCountryAdmin
+    ? [{ items: [{ href: '/platform/country', label: session.platformCountry ?? 'Country', icon: 'globe' }] }]
     : [
-        { href: '/platform', label: 'Overview' },
-        { href: '/platform/country', label: 'Countries' },
-        { href: '/platform/organisations', label: 'Organisations' },
-        { href: '/platform/requests', label: 'Applications' },
-        { href: '/platform/audit', label: 'Platform audit' },
+        {
+          items: [
+            { href: '/platform', label: 'Overview', icon: 'chart' },
+            { href: '/platform/country', label: 'Countries', icon: 'globe' },
+            { href: '/platform/organisations', label: 'Organisations', icon: 'building' },
+            { href: '/platform/requests', label: 'Applications', icon: 'inbox' },
+            { href: '/platform/audit', label: 'Platform audit', icon: 'audit' },
+          ],
+        },
       ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen lg:pl-[268px]">
       <a
         href="#platform-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-brand-700 focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
@@ -42,51 +46,42 @@ export default async function PlatformLayout({ children }: { children: React.Rea
         Skip to content
       </a>
 
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2.5">
-          <Link href="/platform" className="flex items-center gap-2">
-            <ShieldIcon className="h-6 w-6 text-brand-700" />
-            <span className="text-sm font-semibold tracking-tight text-slate-900">CampusGuard</span>
-            <span className="text-xs text-slate-500">Platform</span>
-          </Link>
+      <AppSidebar
+        homeHref={isCountryAdmin ? '/platform/country' : '/platform'}
+        consoleLabel={isCountryAdmin ? 'Country console' : 'Platform console'}
+        sections={sections}
+        userName={session.user.full_name}
+        userMeta={session.user.email}
+        institutionName="CampusGuard Platform"
+      />
 
-          <nav aria-label="Platform" className="order-3 -mx-1 flex w-full gap-1 overflow-x-auto md:order-2 md:w-auto">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="order-2 ml-auto flex items-center gap-3 md:order-3">
-            <span className="hidden text-xs text-slate-500 sm:inline">{session.user.email}</span>
-            <SignOutButton />
+      <div className="flex min-h-screen flex-col">
+        <main
+          id="platform-content"
+          tabIndex={-1}
+          className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 focus:outline-none sm:px-6 lg:px-10 lg:py-9"
+        >
+          <div className="mb-6 flex gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs leading-relaxed text-slate-600 shadow-xs">
+            <LockIcon className="h-4 w-4 shrink-0 text-slate-400" />
+            <p>
+              {isCountryAdmin ? (
+                <>
+                  You are signed in as a <strong>country operator</strong> for {session.platformCountry}. You can see how
+                  every organisation in {session.platformCountry} is doing, and you cannot open any of them — no people,
+                  devices or scans, only counts. Everything you do here is logged in the platform audit trail.
+                </>
+              ) : (
+                <>
+                  You are signed in as a <strong>platform operator</strong>. You can provision and licence organisations,
+                  but you cannot read the people, devices or scans inside them — those stay with each organisation’s own
+                  administrators. Everything you do here is logged in the platform audit trail.
+                </>
+              )}
+            </p>
           </div>
-        </div>
-      </header>
-
-      <main id="platform-content" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 focus:outline-none sm:py-8">
-        <p className="mb-5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-          {isCountryAdmin ? (
-            <>
-              You are signed in as a <strong>country operator</strong> for {session.platformCountry}. You can see how
-              every organisation in {session.platformCountry} is doing, and you cannot open any of them — no people,
-              devices or scans, only counts. Everything you do here is logged in the platform audit trail.
-            </>
-          ) : (
-            <>
-              You are signed in as a <strong>platform operator</strong>. You can provision and licence organisations,
-              but you cannot read the people, devices or scans inside them — those stay with each organisation’s own
-              administrators. Everything you do here is logged in the platform audit trail.
-            </>
-          )}
-        </p>
-        {children}
-      </main>
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

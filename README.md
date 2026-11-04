@@ -18,6 +18,12 @@ organisation — and to add the second, third and hundredth afterwards.
 > promise, and [`docs/00-research/assumptions-to-test.md`](docs/00-research/assumptions-to-test.md)
 > for the six assumptions that decide whether this product should exist at all.
 
+> **Review & redesign (2026-11):** the presentation layer was rebuilt — sidebar app shell, new
+> design system (self-hosted Inter + Sora, indigo brand ramp, icon set), rewritten landing/auth/
+> public pages, and designed 404/error/loading states. The review also fixed a platform-operator
+> sign-in redirect bug and taught the a11y audit to resolve React's streamed boundaries. Full
+> findings and verification results: [`REVIEW.md`](REVIEW.md).
+
 ---
 
 ## 1. What is built

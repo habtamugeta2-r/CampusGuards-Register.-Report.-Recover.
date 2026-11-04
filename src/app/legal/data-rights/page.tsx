@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Card, PageHeader } from '@/components/ui';
+import { PublicShell } from '@/components/public-shell';
 
 export const metadata = { title: 'Your data rights' };
 
@@ -28,7 +29,8 @@ const RIGHTS = [
 
 export default function DataRightsPage() {
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
+    <PublicShell>
+      <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
       <PageHeader
         title="Your data rights"
         description="Rights you have under Ethiopia’s Personal Data Protection Proclamation No. 1321/2024, and how to exercise them in CampusGuard."
@@ -61,6 +63,7 @@ export default function DataRightsPage() {
           Privacy notice
         </Link>
       </p>
-    </main>
+      </div>
+    </PublicShell>
   );
 }

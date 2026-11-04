@@ -2,7 +2,7 @@ import { query, queryOne, tx } from '../db';
 import { id } from '../ids';
 import type { Role, SafeUser, StudentProfile, User, UserStatus } from '../types';
 
-export const USER_COLUMNS = `id, institution_id, email, password_hash, full_name, phone, role, status,
+export const USER_COLUMNS = `id, institution_id, email, password_hash, full_name, phone, role, platform_role, platform_scope_country, status,
   last_login_at, password_changed_at, failed_login_count, locked_until, created_at, updated_at, deleted_at`;
 export const SAFE_USER_COLUMNS = `id, institution_id, email, full_name, phone, role, status,
   last_login_at, password_changed_at, failed_login_count, locked_until, created_at, updated_at, deleted_at`;

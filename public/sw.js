@@ -11,7 +11,7 @@
  *    IndexedDB (encrypted) and uploads the queue when connectivity returns.
  */
 
-const VERSION = 'campusguard-v1';
+const VERSION = 'campusguard-v2';
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 

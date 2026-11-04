@@ -2,6 +2,19 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Badge, Card, Spinner } from './ui';
+import {
+  AlertCircleIcon,
+  AlertTriangleIcon,
+  CameraIcon,
+  CheckCircleIcon,
+  DownloadIcon,
+  InfoIcon,
+  QrIcon,
+  RefreshIcon,
+  ScanIcon,
+  UploadIcon,
+  XIcon,
+} from './icons';
 import { apiPost } from '@/lib/client/api';
 import {
   clearOutbox,
@@ -52,10 +65,17 @@ type CachedResult = {
 type LocalResult = (VerifyResponse & { source: 'live' }) | CachedResult;
 
 const TONE_STYLES: Record<string, string> = {
-  ok: 'border-emerald-300 bg-emerald-50',
-  warn: 'border-amber-300 bg-amber-50',
-  danger: 'border-red-300 bg-red-50',
-  info: 'border-sky-300 bg-sky-50',
+  ok: 'border-emerald-200 bg-emerald-50',
+  warn: 'border-amber-200 bg-amber-50',
+  danger: 'border-red-200 bg-red-50',
+  info: 'border-sky-200 bg-sky-50',
+};
+
+const TONE_CHIP: Record<string, string> = {
+  ok: 'bg-emerald-100 text-emerald-700',
+  warn: 'bg-amber-100 text-amber-700',
+  danger: 'bg-red-100 text-red-700',
+  info: 'bg-sky-100 text-sky-700',
 };
 
 export function ScanConsole({ checkpoints }: { checkpoints: Checkpoint[] }) {
@@ -296,10 +316,10 @@ export function ScanConsole({ checkpoints }: { checkpoints: Checkpoint[] }) {
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-5">
-      <div className="lg:col-span-3">
+    <div className="grid gap-5 xl:grid-cols-5">
+      <div className="xl:col-span-3">
         <Card>
-          <div className="border-b border-slate-100 p-4">
+          <div className="border-b border-slate-100 p-5 sm:px-6">
             <label className="label" htmlFor="checkpoint">
               Checkpoint
             </label>
@@ -318,20 +338,31 @@ export function ScanConsole({ checkpoints }: { checkpoints: Checkpoint[] }) {
             </select>
           </div>
 
-          <div className="p-4">
-            <div id={readerId} className="mx-auto w-full max-w-sm overflow-hidden rounded-lg bg-slate-900" />
+          <div className="p-5 sm:p-6">
+            <div className="relative">
+              <div id={readerId} className="mx-auto w-full max-w-sm overflow-hidden rounded-2xl bg-ink-950" />
+              {!scanning ? (
+                <div className="pointer-events-none absolute inset-0 mx-auto flex max-w-sm flex-col items-center justify-center gap-2 text-slate-500">
+                  <ScanIcon className="h-10 w-10" />
+                  <p className="text-xs">Camera preview appears here</p>
+                </div>
+              ) : null}
+            </div>
 
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap gap-2">
               {scanning ? (
                 <button onClick={stopScanner} className="btn-secondary">
+                  <XIcon className="h-4 w-4" />
                   Stop camera
                 </button>
               ) : (
                 <button onClick={startScanner} className="btn-primary" disabled={cameraAvailable === false}>
+                  <CameraIcon className="h-4 w-4" />
                   Start camera scan
                 </button>
               )}
               <label className="btn-secondary cursor-pointer">
+                <UploadIcon className="h-4 w-4" />
                 Scan from image
                 <input
                   type="file"
@@ -346,14 +377,14 @@ export function ScanConsole({ checkpoints }: { checkpoints: Checkpoint[] }) {
             </div>
 
             {cameraAvailable === false ? (
-              <p className="mt-2 text-xs text-slate-500">
+              <p className="mt-3 text-xs leading-relaxed text-slate-500">
                 The camera is unavailable here (it needs a secure https connection and browser permission). Use “scan from
                 image” or type the code below — both produce an identical record.
               </p>
             ) : null}
 
             <form
-              className="mt-4 grid gap-3 sm:grid-cols-2"
+              className="mt-5 grid gap-4 border-t border-slate-100 pt-5 sm:grid-cols-2"
               onSubmit={(event) => {
                 event.preventDefault();
                 if (manualCode.trim()) void handleToken(manualCode.trim());
@@ -387,10 +418,10 @@ export function ScanConsole({ checkpoints }: { checkpoints: Checkpoint[] }) {
                 />
               </div>
               <div className="flex items-end">
-                <label className="flex items-center gap-2 pb-2 text-sm text-slate-700">
+                <label className="flex items-center gap-2 pb-2.5 text-sm text-slate-700">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 rounded border-slate-300"
+                    className="h-4 w-4 rounded border-slate-300 accent-brand-600"
                     checked={carrierIdShown}
                     onChange={(event) => setCarrierIdShown(event.target.checked)}
                   />
@@ -400,7 +431,7 @@ export function ScanConsole({ checkpoints }: { checkpoints: Checkpoint[] }) {
             </form>
 
             {error ? (
-              <div className="mt-3" role="alert">
+              <div className="mt-4" role="alert">
                 <Alert tone="danger">{error}</Alert>
               </div>
             ) : null}
@@ -408,27 +439,33 @@ export function ScanConsole({ checkpoints }: { checkpoints: Checkpoint[] }) {
         </Card>
       </div>
 
-      <div className="space-y-4 lg:col-span-2">
+      <div className="space-y-5 xl:col-span-2">
         <Card className="card-pad">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-900">Connection</h2>
             <Badge tone={online ? 'ok' : 'warn'}>{online ? 'Online' : 'Offline'}</Badge>
           </div>
-          <p className="mt-2 text-xs text-slate-600">
+          <p className="mt-2.5 text-xs leading-relaxed text-slate-600">
             {cacheMeta
               ? `Cached registry: ${cacheMeta.count} devices, downloaded ${new Date(cacheMeta.generatedAt).toLocaleString('en-ET')}.`
               : 'No offline cache on this device yet.'}
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
             <button onClick={downloadCache} disabled={!online} className="btn-secondary btn-sm">
+              <DownloadIcon className="h-3.5 w-3.5" />
               Download offline cache
             </button>
             <button onClick={syncOutbox} disabled={!online || syncing || pending === 0} className="btn-secondary btn-sm">
-              {syncing ? <Spinner label="Syncing…" /> : `Upload queued scans (${pending})`}
+              {syncing ? <Spinner label="Syncing…" /> : (
+                <>
+                  <RefreshIcon className="h-3.5 w-3.5" />
+                  Upload queued scans ({pending})
+                </>
+              )}
             </button>
           </div>
           {pending > 0 ? (
-            <p className="mt-2 text-xs text-amber-700">
+            <p className="mt-3 text-xs leading-relaxed text-amber-700">
               {pending} scan{pending === 1 ? '' : 's'} captured offline and waiting to upload. They are encrypted on this
               device until then.
             </p>
@@ -436,19 +473,34 @@ export function ScanConsole({ checkpoints }: { checkpoints: Checkpoint[] }) {
         </Card>
 
         {result ? (
-          <Card className={`border-2 ${TONE_STYLES[result.tone] ?? 'border-slate-200 bg-white'}`}>
+          <Card className={`overflow-hidden border ${TONE_STYLES[result.tone] ?? 'border-slate-200 bg-white'}`}>
             {/* The officer is looking at a queue, not at the screen, so the
                 result is announced as it arrives rather than only displayed. */}
-            <div className="p-4" role="status" aria-live="polite" aria-atomic="true">
-              <div className="flex items-start justify-between gap-2">
-                <h2 className="text-lg font-semibold text-slate-900">{result.headline}</h2>
-                <Badge tone={result.source === 'cache' ? 'warn' : 'info'}>
-                  {result.source === 'cache' ? 'Cached' : 'Live'}
-                </Badge>
+            <div className="p-5 sm:p-6" role="status" aria-live="polite" aria-atomic="true">
+              <div className="flex items-start gap-3.5">
+                <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${TONE_CHIP[result.tone] ?? 'bg-slate-100 text-slate-600'}`}>
+                  {result.tone === 'ok' ? (
+                    <CheckCircleIcon className="h-6 w-6" />
+                  ) : result.tone === 'danger' ? (
+                    <AlertCircleIcon className="h-6 w-6" />
+                  ) : result.tone === 'warn' ? (
+                    <AlertTriangleIcon className="h-6 w-6" />
+                  ) : (
+                    <InfoIcon className="h-6 w-6" />
+                  )}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <h2 className="font-display text-lg font-semibold leading-snug text-slate-900">{result.headline}</h2>
+                    <Badge tone={result.source === 'cache' ? 'warn' : 'info'}>
+                      {result.source === 'cache' ? 'Cached' : 'Live'}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-700">{result.detail}</p>
+                </div>
               </div>
-              <p className="mt-1 text-sm text-slate-700">{result.detail}</p>
 
-              <dl className="mt-3 space-y-1 text-sm">
+              <dl className="mt-4 space-y-1.5 text-sm">
                 {result.product ? (
                   <div className="flex gap-2">
                     <dt className="w-20 shrink-0 text-slate-500">Device</dt>
@@ -493,13 +545,13 @@ export function ScanConsole({ checkpoints }: { checkpoints: Checkpoint[] }) {
                 ) : null}
               </dl>
 
-              <div className="mt-4 rounded-lg bg-white/70 p-3">
+              <div className="mt-4 rounded-xl bg-white/80 p-3.5 ring-1 ring-inset ring-black/5">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">What to do</p>
-                <p className="mt-1 text-sm text-slate-800">{result.action}</p>
+                <p className="mt-1 text-sm leading-relaxed text-slate-800">{result.action}</p>
               </div>
 
               {result.carrierUnverified ? (
-                <p className="mt-2 text-xs text-slate-500">
+                <p className="mt-3 text-xs text-slate-500">
                   Carrier identity was not checked — no name was recorded against this scan.
                 </p>
               ) : null}
@@ -511,10 +563,13 @@ export function ScanConsole({ checkpoints }: { checkpoints: Checkpoint[] }) {
           </Card>
         ) : (
           <Card className="card-pad">
-            <p className="text-sm text-slate-600">
-              Scan a CampusGuard label to see its registration status. Results are a prompt for a conversation, never a
-              verdict: no student may be detained, searched or have property confiscated because of what appears here.
-            </p>
+            <div className="flex gap-3">
+              <QrIcon className="h-5 w-5 shrink-0 text-slate-400" />
+              <p className="text-sm leading-relaxed text-slate-600">
+                Scan a CampusGuard label to see its registration status. Results are a prompt for a conversation, never a
+                verdict: no student may be detained, searched or have property confiscated because of what appears here.
+              </p>
+            </div>
           </Card>
         )}
       </div>

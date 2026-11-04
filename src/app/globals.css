@@ -8,9 +8,18 @@
   }
   html {
     -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
   }
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply bg-[#f6f7fb] font-sans text-slate-900 antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+  h1, h2, h3 {
+    @apply font-display tracking-tight;
+    text-wrap: balance;
+  }
+  ::selection {
+    @apply bg-brand-200 text-brand-950;
   }
   /* Visible, consistent focus ring for keyboard users on low-end devices. */
   :focus-visible {
@@ -19,50 +28,87 @@
 }
 
 @layer components {
+  /* ---- surfaces -------------------------------------------------------- */
   .card {
-    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+    @apply rounded-2xl border border-slate-200/90 bg-white shadow-soft;
   }
   .card-pad {
-    @apply p-4 sm:p-6;
+    @apply p-5 sm:p-6;
   }
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.16em] text-brand-700;
+  }
+
+  /* ---- forms ----------------------------------------------------------- */
   .label {
-    @apply mb-1 block text-sm font-medium text-slate-700;
+    @apply mb-1.5 block text-sm font-medium text-slate-700;
   }
   .input {
-    @apply block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
-           placeholder:text-slate-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500
+    @apply block w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-xs
+           transition-colors placeholder:text-slate-400 hover:border-slate-400
+           focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100
            disabled:bg-slate-100 disabled:text-slate-500;
   }
   .select {
     @apply input pr-8;
   }
+
+  /* ---- buttons --------------------------------------------------------- */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium
-           transition-colors disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+           transition-all duration-150 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60
+           disabled:active:translate-y-0;
   }
   .btn-primary {
-    @apply btn bg-brand-700 text-white hover:bg-brand-800;
+    @apply btn bg-gradient-to-b from-brand-600 to-brand-700 text-white shadow-sm
+           hover:from-brand-700 hover:to-brand-800;
   }
   .btn-secondary {
-    @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-50;
+    @apply btn border border-slate-300 bg-white text-slate-700 shadow-xs
+           hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900;
   }
   .btn-danger {
-    @apply btn border border-red-200 bg-white text-red-700 hover:bg-red-50;
+    @apply btn border border-red-200 bg-white text-red-700 shadow-xs hover:border-red-300 hover:bg-red-50;
+  }
+  .btn-ghost {
+    @apply btn text-slate-600 hover:bg-slate-100 hover:text-slate-900;
+  }
+  /* Buttons sitting on the dark ink surfaces (hero, auth panel). */
+  .btn-on-ink {
+    @apply btn border border-white/15 bg-white/10 text-white backdrop-blur hover:border-white/25 hover:bg-white/15;
   }
   .btn-sm {
-    @apply px-2.5 py-1.5 text-xs;
+    @apply rounded-lg px-3 py-1.5 text-xs;
   }
+
+  /* ---- data display ---------------------------------------------------- */
   .th {
-    @apply px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500;
+    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500;
   }
   .td {
-    @apply px-3 py-2.5 text-sm text-slate-700 align-top;
+    @apply px-4 py-3 text-sm text-slate-700 align-top;
   }
   .muted {
     @apply text-sm text-slate-500;
   }
   .code-chip {
-    @apply rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-700;
+    @apply rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-700 ring-1 ring-inset ring-slate-200;
+  }
+
+  /* ---- decorative ------------------------------------------------------ */
+  /* Dot grid used on the dark hero / auth panel. Pure CSS, no asset. */
+  .ink-grid {
+    background-image: radial-gradient(rgb(255 255 255 / 0.07) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  /* Soft brand glow for dark surfaces. */
+  .ink-glow {
+    background:
+      radial-gradient(48rem 28rem at 85% -10%, rgb(99 102 241 / 0.28), transparent 60%),
+      radial-gradient(36rem 22rem at -10% 110%, rgb(79 70 229 / 0.2), transparent 60%);
+  }
+  .text-gradient {
+    @apply bg-gradient-to-r from-brand-300 via-brand-200 to-white bg-clip-text text-transparent;
   }
 }
 

@@ -33,7 +33,7 @@ const patchSchema = z.object({
   brandPrimary: z
     .string()
     .trim()
-    .regex(BRAND_COLOUR, 'Use a hex colour, e.g. #145ce1.')
+    .regex(BRAND_COLOUR, 'Use a hex colour, e.g. #4f46e5.')
     .nullable()
     .optional(),
   reason: z.string().trim().min(4).max(500).optional(),

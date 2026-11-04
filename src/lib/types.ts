@@ -124,6 +124,9 @@ export type User = {
   full_name: string;
   phone: string | null;
   role: Role;
+  /** Platform-level grant, independent of the institution role. */
+  platform_role: PlatformRole;
+  platform_scope_country: string | null;
   status: UserStatus;
   last_login_at: Date | null;
   password_changed_at: Date;
