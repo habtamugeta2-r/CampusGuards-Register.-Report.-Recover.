@@ -1,0 +1,37 @@
+# Local/staging compose file.
+#
+# In production the database MUST be hosted in Ethiopia. This compose file is for
+# development and for staging environments that satisfy that constraint; it is
+# not a production topology (no backups, no TLS, single container).
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: campusguard
+      POSTGRES_PASSWORD: campusguard_dev_pw
+      POSTGRES_DB: campusguard
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U campusguard -d campusguard"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://campusguard:campusguard_dev_pw@db:5432/campusguard?schema=public
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
