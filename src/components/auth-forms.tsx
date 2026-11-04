@@ -8,19 +8,30 @@ import { roleHome } from '@/lib/role-home';
 
 type State = { error?: string; issues?: Array<{ path: string; message: string }>; pending: boolean };
 
-export function LoginForm() {
+/** Seeded demo identities — only rendered when the page passes `demo`. */
+const DEMO_ACCOUNTS = [
+  { label: 'Student', email: 'abel@aastu.edu.et' },
+  { label: 'Officer', email: 'officer@aastu.edu.et' },
+  { label: 'Admin', email: 'admin@aastu.edu.et' },
+  { label: 'Platform', email: 'ops@campusguard.et' },
+  { label: 'Country', email: 'ministry@campusguard.et' },
+];
+const DEMO_PASSWORD = 'Demo#2026';
+
+export function LoginForm({ demo = false }: { demo?: boolean }) {
   const router = useRouter();
   const [state, setState] = useState<State>({ pending: false });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
     setState({ pending: true });
 
     const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: form.get('email'), password: form.get('password') }),
+      body: JSON.stringify({ email, password }),
     });
     const data = await response.json().catch(() => ({}));
 
@@ -28,24 +39,66 @@ export function LoginForm() {
       setState({ pending: false, error: data.error ?? 'Could not sign in.' });
       return;
     }
-    router.push(roleHome(data.role));
+    router.push(roleHome(data.role, data.platformRole));
     router.refresh();
   }
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      {state.error ? <Alert tone="danger">{state.error}</Alert> : null}
+      {demo ? (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3.5">
+          <p className="text-xs font-semibold text-slate-600">Try a demo account</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {DEMO_ACCOUNTS.map((account) => (
+              <button
+                key={account.email}
+                type="button"
+                onClick={() => {
+                  setEmail(account.email);
+                  setPassword(DEMO_PASSWORD);
+                }}
+                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-xs transition-colors hover:border-brand-300 hover:text-brand-700"
+              >
+                {account.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] text-slate-500">
+            One click fills the form · password for all: <span className="code-chip">{DEMO_PASSWORD}</span>
+          </p>
+        </div>
+      ) : null}
+      {state.error ? <Alert tone="danger" live="assertive">{state.error}</Alert> : null}
       <div>
         <label className="label" htmlFor="email">
           Work or study email
         </label>
-        <input id="email" name="email" type="email" required autoComplete="email" className="input" placeholder="you@your-organisation.edu.et" />
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          className="input"
+          placeholder="you@your-organisation.edu.et"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+        />
       </div>
       <div>
         <label className="label" htmlFor="password">
           Password
         </label>
-        <input id="password" name="password" type="password" required autoComplete="current-password" className="input" />
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          autoComplete="current-password"
+          className="input"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
       </div>
       <button type="submit" disabled={state.pending} className="btn-primary w-full">
         {state.pending ? <Spinner label="Signing in…" /> : 'Sign in'}

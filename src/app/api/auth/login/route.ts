@@ -86,5 +86,5 @@ export const POST = route(async (req: Request) => {
 
   await createSession(user.id, user.role, { ip, userAgent: ua });
 
-  return ok({ id: user.id, role: user.role });
+  return ok({ id: user.id, role: user.role, platformRole: user.platform_role });
 });

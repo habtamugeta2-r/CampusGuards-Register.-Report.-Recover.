@@ -2,59 +2,103 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
-import type { Role } from '@/lib/types';
+import type { IconName, SidebarSection } from './nav-config';
+import {
+  AuditIcon,
+  BellIcon,
+  BookIcon,
+  BuildingIcon,
+  ChartIcon,
+  FileTextIcon,
+  GlobeIcon,
+  HistoryIcon,
+  HomeIcon,
+  InboxIcon,
+  LaptopIcon,
+  LockIcon,
+  LogOutIcon,
+  MapPinIcon,
+  MenuIcon,
+  QrIcon,
+  SettingsIcon,
+  ShieldIcon,
+  SwapIcon,
+  TagIcon,
+  UsersIcon,
+  XIcon,
+  type IconProps,
+} from './icons';
 
-type NavItem = { href: string; label: string };
+// Kept for the pages that imported the shield from here before the redesign.
+export { ShieldIcon } from './icons';
 
-const NAV: Record<Role, NavItem[]> = {
-  STUDENT: [
-    { href: '/student', label: 'Overview' },
-    { href: '/student/products', label: 'My devices' },
-    { href: '/student/reports', label: 'Reports' },
-    { href: '/student/authorizations', label: 'Borrowing' },
-    { href: '/student/notifications', label: 'Notifications' },
-    { href: '/student/privacy', label: 'My data' },
-  ],
-  SECURITY: [
-    { href: '/security', label: 'Scan' },
-    { href: '/security/history', label: 'My scans' },
-    { href: '/security/guidance', label: 'Guidance' },
-    { href: '/student/notifications', label: 'Notifications' },
-  ],
-  ADMIN: [
-    { href: '/admin', label: 'Dashboard' },
-    { href: '/admin/reports', label: 'Reports' },
-    { href: '/admin/found', label: 'Found items' },
-    { href: '/admin/products', label: 'Registry' },
-    { href: '/admin/users', label: 'People' },
-    { href: '/admin/scans', label: 'Scan log' },
-    { href: '/admin/checkpoints', label: 'Checkpoints' },
-    { href: '/admin/audit', label: 'Audit log' },
-    { href: '/admin/settings', label: 'Settings' },
-  ],
+const ICONS: Record<IconName, (props: IconProps) => React.ReactNode> = {
+  home: HomeIcon,
+  laptop: LaptopIcon,
+  file: FileTextIcon,
+  swap: SwapIcon,
+  bell: BellIcon,
+  lock: LockIcon,
+  qr: QrIcon,
+  history: HistoryIcon,
+  book: BookIcon,
+  chart: ChartIcon,
+  inbox: InboxIcon,
+  tag: TagIcon,
+  users: UsersIcon,
+  'map-pin': MapPinIcon,
+  audit: AuditIcon,
+  settings: SettingsIcon,
+  globe: GlobeIcon,
+  building: BuildingIcon,
 };
 
-export function TopNav({
-  role,
-  name,
-  institution,
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]!.toUpperCase())
+    .join('');
+}
+
+export function AppSidebar({
+  homeHref,
+  consoleLabel,
+  sections,
+  userName,
+  userMeta,
+  institutionName,
   institutionLogoUrl = null,
-  unread,
-  isPlatformAdmin = false,
+  platformLink = false,
 }: {
-  role: Role;
-  name: string;
-  institution: string;
-  /** The organisation's own mark, shown instead of the generic shield. */
+  homeHref: string;
+  consoleLabel: string;
+  sections: SidebarSection[];
+  userName: string;
+  userMeta: string;
+  institutionName?: string;
   institutionLogoUrl?: string | null;
-  unread: number;
   /** Platform operators get a link across tenants; nobody else does. */
-  isPlatformAdmin?: boolean;
+  platformLink?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const items = NAV[role] ?? [];
+  const [open, setOpen] = useState(false);
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  // Close the drawer whenever navigation happens, and restore body scroll.
+  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    if (!open) return;
+    document.body.style.overflow = 'hidden';
+    closeRef.current?.focus();
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [open]);
 
   async function signOut() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -62,73 +106,199 @@ export function TopNav({
     router.refresh();
   }
 
-  return (
-    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2.5">
-        <Link href={role === 'STUDENT' ? '/student' : role === 'SECURITY' ? '/security' : '/admin'} className="flex items-center gap-2">
-          {institutionLogoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={institutionLogoUrl} alt="" className="h-6 w-6 object-contain" />
-          ) : (
-            <ShieldIcon className="h-6 w-6 text-brand-700" />
-          )}
-          <span className="text-sm font-semibold tracking-tight text-slate-900">CampusGuard</span>
-          <span className="hidden text-xs text-slate-500 sm:inline">{institution}</span>
-        </Link>
+  const notificationsHref = sections
+    .flatMap((section) => section.items)
+    .find((item) => item.icon === 'bell')?.href;
+  const unread = sections.flatMap((section) => section.items).find((item) => item.icon === 'bell')?.badge ?? 0;
 
-        <nav aria-label="Main" className="order-3 -mx-1 flex w-full gap-1 overflow-x-auto md:order-2 md:w-auto">
-          {isPlatformAdmin ? (
+  function isActive(href: string): boolean {
+    return pathname === href || (href !== homeHref && pathname.startsWith(href + '/'));
+  }
+
+  function navList(idPrefix: string) {
+    return (
+      <nav aria-label="Main" className="flex-1 space-y-6 overflow-y-auto px-3 pb-6">
+        {platformLink ? (
+          <div className="px-1">
             <Link
               href="/platform"
-              className="whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
+              className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
             >
-              Platform
+              <GlobeIcon className="h-5 w-5 text-brand-300" />
+              Platform console
             </Link>
-          ) : null}
-          {items.map((item) => {
-            const active = pathname === item.href || (item.href !== '/student' && pathname.startsWith(item.href + '/'));
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? 'page' : undefined}
-                className={clsx(
-                  'whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors',
-                  active ? 'bg-brand-50 text-brand-800' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
-                )}
-              >
-                {item.label}
-                {item.label === 'Notifications' && unread > 0 ? (
-                  <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-700 px-1 text-[10px] font-semibold text-white">
-                    {unread}
-                  </span>
-                ) : null}
-              </Link>
-            );
-          })}
-        </nav>
+          </div>
+        ) : null}
+        {sections.map((section, index) => (
+          <div key={section.label ?? index}>
+            {section.label ? (
+              <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                {section.label}
+              </p>
+            ) : null}
+            <ul className="space-y-0.5">
+              {section.items.map((item) => {
+                const Icon = ICONS[item.icon];
+                const active = isActive(item.href);
+                return (
+                  <li key={`${idPrefix}-${item.href}`}>
+                    <Link
+                      href={item.href}
+                      aria-current={active ? 'page' : undefined}
+                      className={clsx(
+                        'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
+                        active
+                          ? 'bg-white/10 text-white ring-1 ring-inset ring-white/10'
+                          : 'text-slate-400 hover:bg-white/5 hover:text-slate-100',
+                      )}
+                    >
+                      {active ? (
+                        <span aria-hidden="true" className="absolute -left-3 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-brand-400" />
+                      ) : null}
+                      <Icon className={clsx('h-5 w-5 shrink-0', active ? 'text-brand-300' : 'text-slate-500 group-hover:text-slate-300')} />
+                      <span className="truncate">{item.label}</span>
+                      {item.badge ? (
+                        <span className="ml-auto inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-brand-500 px-1.5 text-[10px] font-semibold text-white">
+                          {item.badge}
+                        </span>
+                      ) : null}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </nav>
+    );
+  }
 
-        <div className="order-2 ml-auto flex items-center gap-3 md:order-3">
-          <span className="hidden text-sm text-slate-600 sm:inline">{name}</span>
-          <button onClick={signOut} className="btn-secondary btn-sm">
-            Sign out
+  function brandBlock() {
+    return (
+      <Link href={homeHref} className="flex items-center gap-3 px-2">
+        {institutionLogoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={institutionLogoUrl} alt="" className="h-10 w-10 shrink-0 rounded-xl bg-white/10 object-contain p-1" />
+        ) : (
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-800 text-white shadow-sm">
+            <ShieldIcon className="h-5 w-5" />
+          </span>
+        )}
+        <span className="min-w-0">
+          <span className="block font-display text-[15px] font-semibold tracking-tight text-white">CampusGuard</span>
+          <span className="block truncate text-xs text-slate-400">{institutionName ?? consoleLabel}</span>
+        </span>
+      </Link>
+    );
+  }
+
+  function userBlock() {
+    return (
+      <div className="border-t border-white/10 p-4">
+        <div className="flex items-center gap-3">
+          <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white ring-1 ring-inset ring-white/15">
+            {initials(userName)}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-medium text-white">{userName}</span>
+            <span className="block truncate text-xs text-slate-400">{userMeta}</span>
+          </span>
+          <button
+            onClick={signOut}
+            aria-label="Sign out"
+            title="Sign out"
+            className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <LogOutIcon className="h-5 w-5" />
           </button>
         </div>
       </div>
-    </header>
-  );
-}
+    );
+  }
 
-export function ShieldIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-      <path
-        d="M12 3.2 5 6v5.4c0 4.2 2.9 7.9 7 9.4 4.1-1.5 7-5.2 7-9.4V6l-7-2.8Z"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinejoin="round"
-      />
-      <path d="M9.2 12.2l2 2 3.6-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <>
+      {/* Desktop sidebar */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[268px] flex-col bg-ink-950 lg:flex">
+        <div className="ink-glow flex h-full flex-col">
+          <div className="px-4 pb-5 pt-6">{brandBlock()}</div>
+          <p className="mb-3 px-6 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">{consoleLabel}</p>
+          {navList('desktop')}
+          {userBlock()}
+        </div>
+      </aside>
+
+      {/* Mobile top bar */}
+      <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-white/10 bg-ink-950/95 px-4 py-3 backdrop-blur lg:hidden">
+        <div className="flex min-w-0 items-center gap-2">
+          <button
+            onClick={() => setOpen(true)}
+            aria-label="Open menu"
+            aria-expanded={open}
+            aria-controls="app-menu"
+            className="rounded-lg p-2 text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <MenuIcon className="h-5 w-5" />
+          </button>
+          <Link href={homeHref} className="flex min-w-0 items-center gap-2">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-800 text-white">
+              <ShieldIcon className="h-4 w-4" />
+            </span>
+            <span className="truncate font-display text-sm font-semibold text-white">CampusGuard</span>
+          </Link>
+        </div>
+        <div className="flex items-center gap-1">
+          {notificationsHref ? (
+            <Link
+              href={notificationsHref}
+              aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
+              className="relative rounded-lg p-2 text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <BellIcon className="h-5 w-5" />
+              {unread > 0 ? (
+                <span aria-hidden="true" className="absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-400 ring-2 ring-ink-950" />
+              ) : null}
+            </Link>
+          ) : null}
+          <span aria-hidden="true" className="ml-1 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-[11px] font-semibold text-white ring-1 ring-inset ring-white/15">
+            {initials(userName)}
+          </span>
+        </div>
+      </header>
+
+      {/* Mobile drawer */}
+      {open ? (
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation">
+          <button
+            aria-label="Close menu"
+            className="absolute inset-0 h-full w-full cursor-default bg-ink-950/60 backdrop-blur-sm"
+            onClick={() => setOpen(false)}
+            tabIndex={-1}
+          />
+          <div
+            id="app-menu"
+            className="absolute inset-y-0 left-0 flex w-[300px] max-w-[85vw] animate-fade-in flex-col bg-ink-950 shadow-glow"
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') setOpen(false);
+            }}
+          >
+            <div className="flex items-center justify-between px-4 pb-5 pt-6">
+              {brandBlock()}
+              <button
+                ref={closeRef}
+                onClick={() => setOpen(false)}
+                aria-label="Close menu"
+                className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <XIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mb-3 px-6 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">{consoleLabel}</p>
+            {navList('mobile')}
+            {userBlock()}
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }

@@ -120,6 +120,8 @@ function mapSession(row: SessionJoinRow): SessionUser {
     full_name: row.full_name,
     phone: row.phone,
     role: row.role,
+    platform_role: row.platform_role,
+    platform_scope_country: row.platform_scope_country,
     status: row.status,
     last_login_at: row.last_login_at,
     password_changed_at: row.password_changed_at,

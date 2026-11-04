@@ -14,12 +14,13 @@ export default async function SecurityScanPage() {
   return (
     <AppShell roles={['SECURITY', 'ADMIN']}>
       <PageHeader
+        eyebrow="Security console"
         title="Checkpoint scanning"
         description="Spot-check devices at a checkpoint. Keep it conversational: the screen tells you what to ask, not what to conclude."
       />
 
       {checkpoints.length === 0 ? (
-        <div className="mb-4">
+        <div className="mb-5">
           <Alert tone="warn" title="No checkpoints configured">
             An administrator needs to add at least one checkpoint before scans can be attributed to a location. You can
             still scan — the record will simply have no checkpoint attached.

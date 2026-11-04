@@ -10,7 +10,7 @@ import path from 'node:path';
 
 const OUT = path.join(process.cwd(), 'public', 'icons');
 
-const BRAND = [0x14, 0x5c, 0xe1]; // #145ce1
+const BRAND = [0x4f, 0x46, 0xe5]; // #4f46e5
 const WHITE = [0xff, 0xff, 0xff];
 
 function crc32(buffer: Buffer): number {

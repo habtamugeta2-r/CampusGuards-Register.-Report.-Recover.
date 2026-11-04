@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiPost, apiPatch, apiDelete } from '@/lib/client/api';
 import { Alert, Badge, Card, CardHeader, Spinner } from '@/components/ui';
+import { DEFAULT_BRAND } from '@/lib/brand';
 import {
   INSTITUTION_KINDS,
   INSTITUTION_KIND_LABEL,
@@ -298,9 +299,9 @@ export function OrganisationRowControls({
               id={`brand-${organisation.id}`}
               className="h-8 w-12 cursor-pointer rounded border border-slate-300 bg-white p-0.5"
               type="color"
-              defaultValue={organisation.brand_primary ?? '#145ce1'}
+              defaultValue={organisation.brand_primary ?? DEFAULT_BRAND}
               onBlur={(event) => {
-                if (event.target.value !== (organisation.brand_primary ?? '#145ce1')) {
+                if (event.target.value !== (organisation.brand_primary ?? DEFAULT_BRAND)) {
                   void patch({ brandPrimary: event.target.value }, 'Brand colour updated.');
                 }
               }}
@@ -570,7 +571,7 @@ export function OrganisationProfileForm({
 }) {
   const router = useRouter();
   const [state, setState] = useState<Feedback>({});
-  const [colour, setColour] = useState(initial.brandPrimary ?? '#145ce1');
+  const [colour, setColour] = useState(initial.brandPrimary ?? DEFAULT_BRAND);
 
   return (
     <form
@@ -651,7 +652,7 @@ export function OrganisationProfileForm({
           />
           <span className="font-mono text-xs text-slate-600">{colour}</span>
           {initial.brandPrimary ? (
-            <button type="button" className="text-xs text-slate-500 hover:text-red-700" onClick={() => setColour('#145ce1')}>
+            <button type="button" className="text-xs text-slate-500 hover:text-red-700" onClick={() => setColour(DEFAULT_BRAND)}>
               reset
             </button>
           ) : null}
