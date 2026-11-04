@@ -1,9 +1,17 @@
 import { getPageSession } from '@/lib/auth';
 import { unreadNotificationCount } from '@/lib/repos/misc';
-import { TopNav } from './nav';
+import { AppSidebar } from './nav';
+import { CONSOLE_LABEL, sectionsForRole } from './nav-config';
 import { brandStyle } from '@/lib/brand';
+import { ROLE_LABEL } from '@/lib/constants';
+import { roleHome } from '@/lib/role-home';
 import type { Role } from '@/lib/types';
 
+/**
+ * The signed-in application shell: a fixed dark sidebar on desktop, a top bar
+ * with a slide-in drawer on mobile. The tenant's brand colour re-points the
+ * palette for everything inside, including the sidebar accents.
+ */
 export async function AppShell({
   children,
   roles,
@@ -15,7 +23,7 @@ export async function AppShell({
   const unread = await unreadNotificationCount(session.user.id);
 
   return (
-    <div className="min-h-screen" style={brandStyle(session.institution.brand_primary)}>
+    <div className="min-h-screen lg:pl-[268px]" style={brandStyle(session.institution.brand_primary)}>
       {/* WCAG 2.4.1 — keyboard and screen-reader users need a way past the nav
           on every page, not just the first. */}
       <a
@@ -24,21 +32,29 @@ export async function AppShell({
       >
         Skip to content
       </a>
-      <TopNav
-        role={session.role}
-        name={session.user.full_name}
-        institution={session.institution.code}
+      <AppSidebar
+        homeHref={roleHome(session.role)}
+        consoleLabel={CONSOLE_LABEL[session.role]}
+        sections={sectionsForRole(session.role, unread)}
+        userName={session.user.full_name}
+        userMeta={ROLE_LABEL[session.role]}
+        institutionName={session.institution.name}
         institutionLogoUrl={session.institution.logo_url}
-        unread={unread}
-        isPlatformAdmin={session.platformRole === 'PLATFORM_ADMIN'}
+        platformLink={session.platformRole === 'PLATFORM_ADMIN'}
       />
-      <main id="main-content" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 sm:py-8 focus:outline-none">
-        {children}
-      </main>
-      <footer className="mx-auto max-w-6xl px-4 pb-10 pt-4 text-xs text-slate-500">
-        CampusGuard · Register. Report. Recover. · Data handled under {session.institution.name}’s data-processing
-        agreement.
-      </footer>
+      <div className="flex min-h-screen flex-col">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 focus:outline-none sm:px-6 lg:px-10 lg:py-9"
+        >
+          {children}
+        </main>
+        <footer className="mx-auto w-full max-w-7xl px-4 pb-8 pt-2 text-xs text-slate-500 sm:px-6 lg:px-10">
+          CampusGuard · Register. Report. Recover. · Data handled under {session.institution.name}’s data-processing
+          agreement.
+        </footer>
+      </div>
     </div>
   );
 }

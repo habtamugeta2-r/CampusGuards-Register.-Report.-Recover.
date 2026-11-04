@@ -1,33 +1,32 @@
-import Link from 'next/link';
-import { Card, PageHeader } from '@/components/ui';
+import { Card } from '@/components/ui';
 import { FoundScanner } from '@/components/found-scanner';
-import { ShieldIcon } from '@/components/nav';
+import { PublicShell, PublicPageIntro } from '@/components/public-shell';
+import { HandIcon } from '@/components/icons';
 
 export const metadata = { title: 'Report a found device' };
 export const dynamic = 'force-dynamic';
 
 export default function FoundPage() {
   return (
-    <main className="mx-auto max-w-xl px-4 py-10">
-      <div className="mb-6 flex items-center justify-center gap-2">
-        <ShieldIcon className="h-7 w-7 text-brand-700" />
-        <span className="text-base font-semibold">CampusGuard</span>
+    <PublicShell>
+      <div className="mx-auto max-w-xl px-4 py-14 sm:px-6">
+        <div className="mb-8 flex justify-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+            <HandIcon className="h-7 w-7" />
+          </span>
+        </div>
+        <PublicPageIntro
+          eyebrow="No account needed"
+          title="Found something?"
+          description="Scan the label, or just tell us where you found it. You do not need an account, and we never pass your contact details to the owner."
+        />
+        <Card className="card-pad mt-8">
+          <FoundScanner />
+        </Card>
+        <p className="mt-6 text-center text-xs leading-relaxed text-slate-500">
+          Thank you for handing it in — this is exactly how devices find their way home.
+        </p>
       </div>
-
-      <PageHeader
-        title="Found something?"
-        description="Scan the label, or just tell us where you found it. You do not need an account, and we never pass your contact details to the owner."
-      />
-
-      <Card className="card-pad">
-        <FoundScanner />
-      </Card>
-
-      <p className="mt-6 text-center text-xs text-slate-500">
-        <Link href="/" className="hover:underline">
-          ← Back to overview
-        </Link>
-      </p>
-    </main>
+    </PublicShell>
   );
 }

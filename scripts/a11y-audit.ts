@@ -73,6 +73,51 @@ type AxeResult = {
 let failures = 0;
 let checked = 0;
 
+/**
+ * React streams dynamic pages: the HTML contains the loading.tsx fallback plus
+ * the real content in hidden <div id="S:…"> segments, and inline scripts
+ * ($RC/$RS) swap them in the browser. jsdom does not run those scripts, so
+ * without this step the audit would grade the skeleton instead of the page.
+ * This replays the same swaps statically:
+ *   $RS(S:x, P:x) — move the segment's children before the P:x placeholder.
+ *   $RC(B:x, S:x) — replace the fallback between <template id="B:x"> and the
+ *                   closing <!--/$--> comment with the segment's children.
+ * Segments can nest, so repeat until nothing changes.
+ */
+function completeStreamedBoundaries(document: Document): void {
+  for (let pass = 0; pass < 50; pass += 1) {
+    let progressed = false;
+
+    for (const placeholder of Array.from(document.querySelectorAll('template[id^="P:"]'))) {
+      const segment = document.getElementById(`S:${placeholder.id.slice(2)}`);
+      const parent = placeholder.parentNode;
+      if (!segment || !parent) continue;
+      while (segment.firstChild) parent.insertBefore(segment.firstChild, placeholder);
+      parent.removeChild(placeholder);
+      segment.parentNode?.removeChild(segment);
+      progressed = true;
+    }
+
+    for (const boundary of Array.from(document.querySelectorAll('template[id^="B:"]'))) {
+      const segment = document.getElementById(`S:${boundary.id.slice(2)}`);
+      const parent = boundary.parentNode;
+      if (!segment || !parent) continue;
+      let node: ChildNode | null = boundary.nextSibling;
+      while (node && !(node.nodeType === 8 && (node as Comment).data === '/$')) {
+        const next: ChildNode | null = node.nextSibling;
+        parent.removeChild(node);
+        node = next;
+      }
+      while (segment.firstChild) parent.insertBefore(segment.firstChild, node);
+      parent.removeChild(boundary);
+      segment.parentNode?.removeChild(segment);
+      progressed = true;
+    }
+
+    if (!progressed) break;
+  }
+}
+
 async function cookieFor(email: string): Promise<string> {
   const response = await fetch(`${BASE}/api/auth/login`, {
     method: 'POST',
@@ -97,6 +142,7 @@ async function audit(path: string, cookie?: string): Promise<void> {
 
   const dom = new JSDOM(html, { url: `${BASE}${path}`, pretendToBeVisual: true });
   const { window } = dom;
+  completeStreamedBoundaries(window.document);
 
   // axe-core needs a real-ish global environment.
   const axe = (await import('axe-core')).default;

@@ -1,11 +1,13 @@
 import Link from 'next/link';
 import { Card, PageHeader } from '@/components/ui';
+import { PublicShell } from '@/components/public-shell';
 
 export const metadata = { title: 'Privacy notice' };
 
 export default function PrivacyPage() {
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
+    <PublicShell>
+      <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
       <PageHeader
         title="Privacy notice"
         description="What CampusGuard collects, why, how long it is kept, and who can see it. Version 2026-01-01."
@@ -108,6 +110,7 @@ export default function PrivacyPage() {
           terms of use
         </Link>
       </p>
-    </main>
+      </div>
+    </PublicShell>
   );
 }

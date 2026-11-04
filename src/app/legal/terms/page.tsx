@@ -1,11 +1,13 @@
 import Link from 'next/link';
 import { Card, PageHeader } from '@/components/ui';
+import { PublicShell } from '@/components/public-shell';
 
 export const metadata = { title: 'Terms of use' };
 
 export default function TermsPage() {
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
+    <PublicShell>
+      <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
       <PageHeader
         title="Terms of use"
         description="Plain-language terms for students, officers and administrators using CampusGuard. Version 2026-01-01."
@@ -72,6 +74,7 @@ export default function TermsPage() {
           Your data rights
         </Link>
       </p>
-    </main>
+      </div>
+    </PublicShell>
   );
 }
